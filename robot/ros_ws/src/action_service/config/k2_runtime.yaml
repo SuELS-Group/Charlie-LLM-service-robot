@@ -1,0 +1,24 @@
+# Initial engineering envelope; verify with the actual object before study use.
+# Every robot boot starts empty by the team's operating convention. A node or
+# planner restart within that boot retains the latest action/user correction.
+object_state_file: '~/.local/state/charlie/{boot_id}/object-state.json'
+# Opt in only if every action-service restart must also reset possession.
+object_state_reset_on_start: false
+joint_max_age_seconds: 1.0
+# A retracted arm reported -0.000006 m on the robot. Only the zero endpoint
+# permits this small encoder offset; the maximum extension remains unchanged.
+retracted_encoder_tolerance_metres: 0.001
+# Initial contact indication only, not calibrated proof of an object. Verify
+# with empty closes and the trial object. No force/velocity setting is changed.
+gripper_contact:
+  joint: joint_gripper_finger_left
+  max_age_seconds: 0.4
+  stable_seconds: 0.4
+  position_span_rad: 0.004
+  min_closing_load_pct: 5.0
+transit_ranges:
+  wrist_extension: [0.0, 0.04]
+  joint_lift: [0.2, 0.90]
+  joint_wrist_yaw: [-0.2, 3.2]
+  joint_wrist_pitch: [-0.65, 0.15]
+  joint_wrist_roll: [-0.25, 0.25]

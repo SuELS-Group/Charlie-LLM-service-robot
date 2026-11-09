@@ -1,0 +1,3 @@
+Students can use the eduroam wireless network in public university areas such as lecture halls, seminar rooms, the library and cafeterias.
+Visitors whose home institution participates in eduroam can use their home institution's eduroam credentials at the University of Oldenburg.
+For connection instructions or account problems, use the university IT Services' campus-network guidance rather than requesting another person's password.

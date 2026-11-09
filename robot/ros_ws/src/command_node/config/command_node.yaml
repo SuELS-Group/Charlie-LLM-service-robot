@@ -1,0 +1,59 @@
+topics:
+  llm_info: robot_to_llm_info
+  map: /map
+  goal_pose: /goal_pose
+  local_footprint: /local_costmap/footprint
+  global_footprint: /global_costmap/footprint
+  depth_detections: /depth_mapping/head/detections
+  nav_status: /navigate_to_pose/_action/status
+  global_stop: /global_stop
+services:
+  get_position: /command_node/get_position
+  waypoint_get: /waypoint/get
+  follow_start: /command_node/start_following
+  follow_stop: /command_node/stop_following
+frames:
+  base: base_link
+  arm_root: link_arm_l0
+actions:
+  navigate_to_pose: navigate_to_pose
+  move_to: /command_node/move_to
+  turn_to: /command_node/turn_to
+  turn_to_relative: /command_node/turn_to_relative
+  move_to_waypoint: /command_node/move_to_waypoint
+  position_for_action: /command_node/position_for_action
+  follow_joint_trajectory: /stretch_controller/follow_joint_trajectory
+qos:
+  default_depth: 10
+  best_effort_depth: 1
+  map_depth: 1
+  goal_pose_depth: 1
+  nav_status_depth: 1
+  global_stop_depth: 1
+timers:
+  footprint_period_seconds: 1.0
+  pose_update_period_seconds: 0.1
+  follow_period_seconds: 0.5
+follow:
+  distance: 0.3
+  update_threshold: 0.15
+  default_distance: 1.0
+grab:
+  default_distance: 0.5
+place:
+  default_distance: 0.65
+navigation:
+  use_nav2_action: true
+  navigate_wait_seconds: 1.0
+  trajectory_wait_seconds: 1.0
+  follow_transform_timeout_seconds: 0.1
+  head_motion_seconds: 0.5
+  head_nav_pan: 0.0
+  head_nav_tilt: -0.6
+  head_default_pan: 0.0
+  head_default_tilt: -0.2
+footprint:
+  base_front: 0.22
+  base_back: -0.22
+  base_half_width: 0.22
+  safety_margin: 0.05

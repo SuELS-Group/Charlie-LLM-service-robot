@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Knowledge Base</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/faces.css" rel="stylesheet">
+    <link href="/static/css/knowledge.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="faces-page knowledge-page">
+<div class="app faces-app knowledge-app">
+    <header class="topbar faces-topbar knowledge-topbar">
+        <div class="topbar-left">
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='/'" title="Back to controller">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="logo-icon" data-lucide="book-open"></i>
+                <span>Knowledge Base</span>
+            </div>
+            <span class="server-status" id="knowledge-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Loading...</span>
+            </span>
+        </div>
+        <div class="topbar-center faces-topbar-center">
+            <div class="faces-path" id="knowledge-docs-path">Loading...</div>
+        </div>
+        <div class="topbar-right">
+            <button class="btn btn-ghost btn-sm" id="knowledge-refresh-btn" onclick="knowledgeLoad()" title="Refresh">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+            <button class="btn btn-primary btn-sm" id="knowledge-reindex-btn" onclick="knowledgeReindex()" title="Rebuild searchable knowledge">
+                <i data-lucide="database-zap"></i>
+                Reindex
+            </button>
+            <button class="btn btn-ghost btn-sm" id="knowledge-add-btn" onclick="knowledgeOpenDialog()" title="Add document">
+                <i data-lucide="file-plus"></i>
+                Add Doc
+            </button>
+        </div>
+    </header>
+
+    <main class="content faces-content knowledge-content">
+        <section class="faces-panel knowledge-panel">
+            <div class="faces-panel-header knowledge-panel-header">
+                <div>
+                    <h1>Documents</h1>
+                    <p id="knowledge-subtitle">Loading documents...</p>
+                </div>
+                <p class="knowledge-help">
+                    Search updates automatically after adding, editing, or deleting documents. Reindex retries a failed update.
+                </p>
+            </div>
+            <p id="knowledge-index-status" role="status">Checking searchable index...</p>
+            <div class="knowledge-list" id="knowledge-list">
+                <div class="faces-empty-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <p>Loading documents...</p>
+                </div>
+            </div>
+        </section>
+        <section class="faces-panel knowledge-panel">
+            <div class="faces-panel-header knowledge-panel-header">
+                <div><h1>Remembered facts</h1><p id="memory-count">Loading...</p></div>
+                <p class="knowledge-help">Facts saved during conversations are shared across this workstation's conversations. They have no per-person ownership and are separate from remembered physical locations.</p>
+            </div>
+            <div class="knowledge-list" id="memory-list"></div>
+            <div class="knowledge-doc-actions">
+                <button class="btn btn-ghost" id="memory-previous">Previous</button>
+                <button class="btn btn-ghost" id="memory-next">Next</button>
+                <button class="btn btn-ghost" id="memory-refresh">Refresh facts</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Add / Edit dialog -->
+<div class="faces-dialog-backdrop hidden" id="knowledge-dialog">
+    <form class="faces-dialog knowledge-dialog" id="knowledge-add-form" onsubmit="knowledgeSubmit(event)">
+        <header class="faces-dialog-header">
+            <h2 id="knowledge-dialog-title">Add Document</h2>
+            <button class="btn btn-ghost btn-sm" onclick="knowledgeCloseDialog()" title="Close" type="button">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+        <div class="faces-dialog-body knowledge-dialog-body">
+            <label>
+                <span>Source</span>
+                <select id="knowledge-source-select" onchange="knowledgeSourceChanged()">
+                    <option value="text">Write / paste text</option>
+                    <option value="file">Upload .txt file</option>
+                </select>
+            </label>
+            <label id="knowledge-name-label">
+                <span>Filename</span>
+                <input autocomplete="off" id="knowledge-name-input" placeholder="e.g. coffee_machine" type="text">
+                <small>.txt will be added automatically</small>
+            </label>
+            <label id="knowledge-content-label">
+                <span>Content</span>
+                <textarea id="knowledge-content-input" placeholder="Enter the knowledge text here..." rows="8"></textarea>
+            </label>
+            <label class="hidden" id="knowledge-file-label">
+                <span>File</span>
+                <input accept=".txt,text/plain" id="knowledge-file-input" type="file">
+            </label>
+        </div>
+        <footer class="faces-dialog-footer">
+            <button class="btn btn-ghost" onclick="knowledgeCloseDialog()" type="button">Cancel</button>
+            <button class="btn btn-primary" id="knowledge-submit-btn" type="submit">Save</button>
+        </footer>
+    </form>
+</div>
+
+<!-- Reindex result dialog -->
+<div class="faces-dialog-backdrop hidden" id="knowledge-reindex-dialog">
+    <div class="faces-dialog knowledge-dialog">
+        <header class="faces-dialog-header">
+            <h2>Reindex Result</h2>
+            <button class="btn btn-ghost btn-sm" onclick="knowledgeCloseReindexDialog()" title="Close" type="button">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+        <div class="faces-dialog-body">
+            <pre class="knowledge-output" id="knowledge-reindex-output"></pre>
+        </div>
+        <footer class="faces-dialog-footer">
+            <button class="btn btn-primary" onclick="knowledgeCloseReindexDialog()" type="button">Close</button>
+        </footer>
+    </div>
+</div>
+
+<div class="faces-dialog-backdrop hidden" id="memory-dialog">
+    <form class="faces-dialog knowledge-dialog" id="memory-form">
+        <header class="faces-dialog-header"><h2>Edit remembered fact</h2></header>
+        <div class="faces-dialog-body"><label>Fact<textarea id="memory-fact" rows="6" required></textarea></label></div>
+        <footer class="faces-dialog-footer">
+            <button class="btn btn-ghost" id="memory-cancel" type="button">Cancel</button>
+            <button class="btn btn-primary" id="memory-save" type="submit">Save</button>
+        </footer>
+    </form>
+</div>
+<script src="/static/js/knowledge.js"></script>
+</body>
+</html>

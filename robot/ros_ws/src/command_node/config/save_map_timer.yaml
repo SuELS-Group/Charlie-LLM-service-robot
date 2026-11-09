@@ -1,0 +1,26 @@
+paths:
+  map: ~/.stretch_nav/maps/my_slam_map
+  pose: ~/.stretch_nav/state/last_pose.json
+frames:
+  map: map
+  base: base_link
+modes:
+  mapping: mapping
+  localization: localization
+  unknown: unknown
+services:
+  serialize_map: /slam_toolbox/serialize_map
+  pause_measurements: /slam_toolbox/pause_new_measurements
+  get_current_mode: /slam_mode_manager/get_current_mode
+  stop_mapping: stop_mapping
+  start_mapping: start_mapping
+  pause_wait_seconds: 1.0
+  serialize_wait_seconds: 2.0
+timers:
+  pose_save_period_seconds: 1.0
+  pose_log_period_seconds: 10.0
+  map_save_period_seconds: 30.0
+  mode_check_period_seconds: 5.0
+shutdown:
+  max_wait_seconds: 30.0
+  poll_period_seconds: 1.0

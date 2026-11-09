@@ -1,0 +1,15 @@
+audio:
+  sample_rate: 22050
+  channels: 1
+  dtype: float32
+enable_feedback_sounds: false
+thinking_sound: thinking-sound
+sounds_volume: 70
+topics:
+  global_stop: /global_stop
+  control_led: control_led
+services:
+  play_audio: tts_play_audio
+qos:
+  stop_depth: 1
+  control_led_depth: 1

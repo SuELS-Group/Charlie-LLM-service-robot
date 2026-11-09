@@ -1,0 +1,4 @@
+string name
+---
+tool_status/ToolStatus status
+waypoint_interfaces/Waypoint waypoint

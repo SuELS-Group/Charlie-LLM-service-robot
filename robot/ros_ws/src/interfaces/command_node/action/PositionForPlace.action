@@ -1,0 +1,15 @@
+string target
+float64 x
+float64 y
+float64 distance
+---
+tool_status/ToolStatus status
+string message
+string target
+float64 goal_x
+float64 goal_y
+float64 goal_orientation
+string result_data
+---
+string status
+string message

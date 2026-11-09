@@ -1,0 +1,38 @@
+joints:
+  control:
+    - joint_lift
+    - wrist_extension
+    - joint_wrist_yaw
+    - joint_wrist_pitch
+    - joint_wrist_roll
+    - joint_gripper_finger_left
+arm:
+  min: 0.01
+  max: 0.50
+lift:
+  min: 0.20
+  max: 0.97
+gripper:
+  joint: joint_gripper_finger_left
+  open: 0.60
+pose:
+  # Keep the gripper high enough to read as a social ^ gesture.
+  lift_height_m: 0.82
+  wrist_extension_m: 0.06
+  yaw_center: 1.57
+  wrist_pitch: -0.35
+  wrist_roll: 0.0
+  move_duration_s: 2.0
+  settle_seconds: 0.2
+  return_to_center: true
+wave:
+  # A simple left/right wrist-yaw oscillation; tune later for a nicer gesture.
+  yaw_left: -0.45
+  yaw_right: 0.45
+  repetitions: 3
+  max_repetitions: 6
+  stroke_duration_s: 0.45
+timeouts:
+  trajectory_server_seconds: 4.0
+  position_mode_seconds: 3.0
+  navigation_mode_seconds: 3.0

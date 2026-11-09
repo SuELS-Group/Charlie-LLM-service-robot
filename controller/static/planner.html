@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>LLM Planner</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/planner.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="planner-page">
+<div class="app planner-app">
+    <header class="topbar planner-topbar">
+        <div class="topbar-left">
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='/'" title="Back to controller">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="logo-icon" data-lucide="brain"></i>
+                <span>LLM Planner</span>
+            </div>
+            <span class="server-status" id="planner-connection-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Connecting...</span>
+            </span>
+        </div>
+        <div class="topbar-center planner-topbar-center">
+            <div class="planner-endpoint" id="planner-endpoint">Discovering workstation endpoint...</div>
+        </div>
+        <div class="topbar-right">
+            <button class="btn btn-ghost btn-sm" id="planner-reconnect-btn" title="Reconnect">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content planner-content">
+        <section class="planner-overview-grid" id="planner-overview">
+            <article class="planner-overview-card">
+                <span class="planner-overview-label">Agent</span>
+                <strong class="planner-overview-value">Idle</strong>
+                <span class="planner-overview-meta">No live data yet</span>
+            </article>
+            <article class="planner-overview-card">
+                <span class="planner-overview-label">Context Window</span>
+                <strong class="planner-overview-value">Waiting for planner activity</strong>
+                <span class="planner-overview-meta">No planner prompt recorded yet</span>
+            </article>
+            <article class="planner-overview-card">
+                <span class="planner-overview-label">Current Plan</span>
+                <strong class="planner-overview-value">No active session</strong>
+                <span class="planner-overview-meta">Planner has not executed a plan yet</span>
+            </article>
+        </section>
+
+        <section id="planner-live-question" class="planner-live-question" aria-live="polite" hidden></section>
+
+        <section class="planner-layout">
+            <article class="planner-panel planner-panel-main">
+                <div class="planner-panel-header">
+                    <div>
+                        <h1>Live Session</h1>
+                        <p id="current-session-subtitle">The planner is idle.</p>
+                    </div>
+                    <span class="planner-badge idle" id="current-session-badge">Idle</span>
+                </div>
+                <div class="planner-panel-body" id="current-session-panel">
+                    <div class="planner-empty-state">
+                        <i data-lucide="bot"></i>
+                        <p>Waiting for the next planner session.</p>
+                    </div>
+                </div>
+            </article>
+
+            <aside class="planner-panel planner-panel-side">
+                <div class="planner-panel-header">
+                    <div>
+                        <h2>Recent Sessions</h2>
+                        <p>Newest completed runs from the LLM node.</p>
+                    </div>
+                </div>
+                <div class="planner-panel-body planner-history-list" id="planner-history-panel">
+                    <div class="planner-empty-state compact">
+                        <i data-lucide="history"></i>
+                        <p>No completed sessions yet.</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </main>
+</div>
+
+<script src="/static/js/planner-core.js"></script>
+<script src="/static/js/planner-render.js"></script>
+<script src="/static/js/planner-bootstrap.js"></script>
+</body>
+</html>

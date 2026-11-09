@@ -1,0 +1,27 @@
+ros_response_subscriber: 'robot_to_llm_response'
+
+# === Knowledge / RAG ===
+ollama_base_url: 'http://localhost:11434'
+knowledge_db_path: 'workstation/mcp_server/config/knowledge_db'
+knowledge_collection: 'knowledge'
+knowledge_embed_model: 'qllama/multilingual-e5-base'
+knowledge_embedding_timeout_s: 8
+knowledge_query_timeout_s: 10
+knowledge_keep_alive: '1h'
+knowledge_approval_file: 'controller/config/knowledge_approval.json'
+knowledge_chunk_size: 300
+knowledge_chunk_overlap: 80
+knowledge_distance_threshold: 0.218
+knowledge_legacy_distance_threshold: 0.2
+memory_collection: 'memory'
+memory_distance_threshold: 0.226
+memory_legacy_distance_threshold: 0.4
+handoff:
+  standoff_m: 1.3
+
+weather_default_lat: 53.14
+weather_default_lon: 8.21
+weather_api_url: 'https://api.brightsky.dev/current_weather'
+
+wiki_api_url: 'https://en.wikipedia.org/w/api.php'
+wiki_user_agent: 'RobotWikiTool/1.0'

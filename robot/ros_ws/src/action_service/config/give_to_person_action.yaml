@@ -1,0 +1,60 @@
+joints:
+  control:
+    - joint_lift
+    - wrist_extension
+    - joint_wrist_yaw
+    - joint_wrist_pitch
+    - joint_wrist_roll
+    - joint_gripper_finger_left
+arm:
+  min: 0.01
+  max: 0.50
+lift:
+  min: 0.2
+  max: 0.97
+wrist:
+  yaw:
+    stowed: 3.0
+  pitch:
+    down: -0.45
+gripper:
+  joint: joint_gripper_finger_left
+  closed: -0.35
+  open:
+    max: 0.6
+handoff:
+  required_gesture: thumbs_up
+  # Keep this aligned with gesture_detection_node's tuned hand threshold.
+  min_confidence: 0.55
+  gesture_max_age_seconds: 1.2
+  timeout_seconds: 45.0
+  post_open_hold_seconds: 0.8
+  switch_to_navigation_mode_after: true
+  base:
+    rotation_degrees: 90.0
+    turn_timeout_seconds: 60.0
+    position_timeout_seconds: 5.0
+  head:
+    pan: -1.57
+    tilt: -0.35
+    move_duration: 1.5
+    restore:
+      pan: 0.0
+      tilt: -0.2
+      move_duration: 1.5
+  pose:
+    joint_lift: 0.78
+    wrist_extension: 0.10
+    joint_wrist_yaw: 0.0
+    joint_wrist_pitch: -0.35
+    joint_wrist_roll: 0.0
+  object_stow:
+    safe_lift_height: 0.45
+  release_stow:
+    safe_lift_height: 0.45
+durations:
+  pose_seconds: 2.2
+  open_seconds: 1.2
+timeouts:
+  trajectory_server_seconds: 6.0
+  joints_seconds: 4.0

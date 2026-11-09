@@ -1,0 +1,116 @@
+# SLAM Toolbox Parameters - LOCALIZATION MODE
+# This configuration is optimized for stable pose tracking against an existing map.
+# The map is frozen and only used for scan matching to estimate robot pose.
+#
+# Key differences from mapping mode:
+# - mode: localization (map is not modified)
+# - Stricter scan matching for better pose accuracy
+# - No loop closure needed (map is already complete)
+
+slam_toolbox:
+  ros__parameters:
+
+    # Plugin params - Ceres solver for optimization
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: HuberLoss  # Robust against outliers
+
+    # ROS Parameters
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+
+    # === LOCALIZATION MODE ===
+    # Map is frozen - only pose estimation, no map updates
+    mode: localization
+
+    # Ignore the robot's own body/arm
+    min_laser_range: 0.2
+    max_laser_range: 12.0
+
+    # Logging and debugging
+    debug_logging: false
+    throttle_scans: 1
+
+    # TF settings - critical for proper operation
+    transform_publish_period: 0.02  # 50Hz transform publishing
+    transform_timeout: 0.5
+    tf_buffer_duration: 10.0  # Reduced from 30.0 for faster recovery from stale TF
+
+    # Map settings (not used in localization, but required)
+    resolution: 0.05
+    map_update_interval: 5.0
+
+    # Stack size for large maps
+    stack_size_to_use: 40000000
+
+    # Interactive mode - DISABLED for localization
+    # Interactive mode caches laser scans and can interfere with localization.
+    # It's only useful for manually moving nodes in mapping mode.
+    enable_interactive_mode: false
+
+    # === Scan Matching Parameters (tuned for localization) ===
+    use_scan_matching: true
+    use_scan_barycenter: true
+
+    # CRITICAL for rotation tracking: By default (false), slam_toolbox's
+    # shouldProcessScan() only checks translational distance, completely ignoring
+    # heading changes. This means pure rotation NEVER triggers scan processing,
+    # causing the robot to drift on odometry alone during rotation.
+    # Setting this to true makes it check distance OR heading (either triggers).
+    # NOTE: This parameter only exists in newer slam_toolbox versions.
+    # If your version doesn't have it, it's silently ignored — the low
+    # minimum_travel_distance below serves as a version-independent workaround.
+    check_min_dist_and_heading_precisely: true
+
+    # Update frequency
+    minimum_time_interval: 1.0        # Hard time gate - scans closer than this are always skipped
+    # ROTATION FIX: Set very low so the distance gate in shouldProcessScan()
+    # doesn't block rotation-only scans. In older slam_toolbox versions,
+    # shouldProcessScan rejects scans when dist² < 0.8 * minimum_travel_distance²
+    # WITHOUT checking heading at all. With 0.001m, the threshold is 0.0000008m² —
+    # even tiny odometry noise during rotation exceeds this.
+    # minimum_time_interval (1.0s) is the real rate limiter, not this.
+    minimum_travel_distance: 0.001
+    minimum_travel_heading: 0.05   # Update every ~2.9° of rotation
+
+    scan_buffer_size: 20            # Larger buffer for more robust matching
+    scan_buffer_maximum_scan_distance: 15.0
+
+    # Looser matching thresholds for initial convergence, then tightens automatically
+    link_match_minimum_response_fine: 0.15
+    link_scan_maximum_distance: 3.0         # Allow matching over larger distance
+
+    # Loop closure - disabled in localization mode (map is complete)
+    do_loop_closing: false
+    loop_search_maximum_distance: 3.0
+
+    # Correlation Parameters - for scan matching
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    # Scan Matcher Parameters - tuned for stable localization
+    distance_variance_penalty: 0.3
+    # Karto default is ~0.349 (20°). Higher values = less angular discrimination
+    # = matcher can't tell correct angle from wrong angle. Lower = tighter.
+    angle_variance_penalty: 0.35
+
+    # Angular search parameters - MUST satisfy: fine_search_angle_offset << 0.5 * coarse_angle_resolution
+    # The fine search window is ±(0.5 * coarse_angle_resolution) at fine_search_angle_offset steps.
+    # If fine_search_angle_offset >= 0.5 * coarse_angle_resolution, only 1 angle is tested = NO refinement!
+    fine_search_angle_offset: 0.00349   # Fine search STEP SIZE (0.2°) - gives 11 angular steps in fine pass
+    coarse_search_angle_offset: 0.5     # Coarse search RANGE (±28°) - wide enough to recover from drift
+    coarse_angle_resolution: 0.0349     # Coarse search STEP SIZE (2°) - fine window = ±1° around best coarse
+    minimum_angle_penalty: 0.8
+    minimum_distance_penalty: 0.4
+    use_response_expansion: true
+
+    # CRITICAL: Must be false to enable scan processing for localization!
+    # When true (default when loading a map), slam_toolbox ignores new laser scans
+    # and cannot correct the robot's pose estimate.
+    paused_new_measurements: false

@@ -1,0 +1,4 @@
+For International Office consultations at Oldenburg's Student Service Centre, the InfoDesk clarifies your advice topic and issues a paper waiting ticket with a QR code.
+Scanning this consultation ticket shows how many visitors are ahead of you and current waiting-list information, even away from the SSC reception desk.
+Students of the University of Oldenburg can instead check in for counselling with their CampusCard and view or cancel their consultation ticket in Stud.IP.
+The number of visitors ahead of you does not establish an exact waiting time in minutes.

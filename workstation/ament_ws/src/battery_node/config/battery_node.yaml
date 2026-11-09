@@ -1,0 +1,23 @@
+topics:
+  battery: /battery
+  events: /battery_node/events
+services:
+  get_status: /battery_node/get_status
+timers:
+  check_period_seconds: 1.0
+  max_sample_age_seconds: 3.0
+thresholds:
+  anti_chatter_margin_pct: 2.0
+  levels:
+    green_min_pct: 80.0
+    yellow_min_pct: 60.0
+    orange_min_pct: 42.0
+voltage:
+  green:
+    top: 13.4
+    min: 11.5
+  yellow:
+    min: 11.0
+  orange:
+    min: 10.5
+  floor: 9.5

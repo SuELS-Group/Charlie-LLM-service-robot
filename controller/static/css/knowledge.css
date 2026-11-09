@@ -1,0 +1,134 @@
+.knowledge-panel-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.knowledge-help {
+    font-size: 0.8rem;
+    color: var(--text-muted, #888);
+    margin: 0;
+}
+
+.knowledge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.knowledge-doc-card {
+    background: var(--surface-2, #1a1d22);
+    border: 1px solid var(--border, #2a2d33);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color 0.15s;
+}
+
+.knowledge-doc-card:hover {
+    border-color: var(--accent, #5b8af5);
+}
+
+.knowledge-doc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.knowledge-doc-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.knowledge-doc-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--accent, #5b8af5);
+}
+
+.knowledge-doc-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.knowledge-doc-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.knowledge-doc-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.knowledge-doc-preview {
+    font-size: 0.8rem;
+    color: var(--text-muted, #888);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 4.5rem;
+    overflow: hidden;
+}
+
+.knowledge-dialog-body label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.knowledge-dialog-body label span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.knowledge-dialog-body input[type="text"],
+.knowledge-dialog-body select,
+.knowledge-dialog-body textarea {
+    background: var(--surface-3, #22252c);
+    border: 1px solid var(--border, #2a2d33);
+    border-radius: 6px;
+    color: var(--text, #e8eaf0);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.knowledge-dialog-body textarea {
+    resize: vertical;
+    font-family: monospace;
+    min-height: 160px;
+}
+
+.knowledge-dialog-body small {
+    font-size: 0.75rem;
+    color: var(--text-muted, #888);
+}
+
+.knowledge-output {
+    font-family: monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--surface-3, #22252c);
+    border-radius: 6px;
+    padding: 0.75rem;
+    color: var(--text, #e8eaf0);
+}

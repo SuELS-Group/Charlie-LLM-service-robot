@@ -1,0 +1,8 @@
+uint8 STATUS_UNKNOWN=0
+uint8 STATUS_SUCCESS=1
+uint8 STATUS_FAILURE=2
+uint8 STATUS_STOPPED=3
+uint8 STATUS_TIMEOUT=4
+
+uint8 status
+string message

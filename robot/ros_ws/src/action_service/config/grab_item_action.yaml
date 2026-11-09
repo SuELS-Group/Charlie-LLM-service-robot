@@ -1,0 +1,92 @@
+joints:
+  control:
+    - joint_lift
+    - wrist_extension
+    - joint_wrist_yaw
+    - joint_wrist_pitch
+    - joint_wrist_roll
+    - joint_gripper_finger_left
+frames:
+  base: base_link
+  camera: gripper_color_optical_frame
+  fingertip_left: link_aruco_fingertip_left
+  fingertip_right: link_aruco_fingertip_right
+arm:
+  min: 0.01
+  max: 0.5
+  retract_step: 0.032
+lift:
+  min: 0.2
+  max: 0.97
+  retract_step: 0.025
+wrist:
+  yaw:
+    min: -1.0
+    max: 2.5
+    stowed: 3.0
+  pitch:
+    min: -1.2
+    max: 0.3
+    down: -0.45
+    search: -0.4
+    down_steep: -0.9
+    search_steep: -0.55
+  roll:
+    min: -0.1
+    max: 0.1
+gripper:
+  joint: joint_gripper_finger_left
+  closed: -0.35
+  open:
+    min: 0.32
+    max: 0.6
+    reference_width_m: 0.06
+    per_meter: 4.0
+    near_cap_1: 0.55
+    near_cap_2: 0.5
+  settle:
+    epsilon: 0.002
+    count: 6
+grasp:
+  topdown_lower_m: 0.025
+  ball:
+    topdown_min_score: 0.65
+    lower_m: 0.024
+    target_z_bias_m: 0.0
+    push_scale_min: 0.35
+    push_scale_max: 0.5
+  push:
+    min_m: 0.005
+    extra_m: 0.03
+    max_m: 0.04
+  y_nudge_max_m: 0.01
+  min_hold_seconds: 1.35
+  max_hold_seconds: 2.6
+  marker_to_tip_forward_m: 0.034
+  z_target_m: 0.01
+  y_target_bias_m: 0.0
+control:
+  rate_hz: 70.0
+  send_rate_hz: 30.0
+  trajectory_dt: 0.2
+  speed_factor: 0.7
+  no_detection_timeout_seconds: 1.6
+alignment:
+  gains:
+    yaw: 2.4
+    pitch_view: 1.8
+    pitch_bias: 2.2
+    roll: 2.0
+  deadband:
+    x: 0.004
+    y: 0.005
+    z: 0.006
+  thresholds:
+    x: 0.014
+    y: 0.012
+    z: 0.02
+    pitch_error: 0.28
+  stable_frames: 5
+timeouts:
+  grab_seconds: 90
+  tf_timeout_seconds: 0.3

@@ -1,0 +1,42 @@
+{
+  "machines": {
+    "stretch-se3-3128": {
+      "name": "Stretch mit Hut",
+      "host": "192.168.50.51",
+      "port": 22,
+      "ros_domain_id": 43,
+      "type": "robot",
+      "project_path": "~/pg-llm-service-robot"
+    },
+    "stretch-se3-3152": {
+      "name": "Stretch ohne Hut",
+      "host": "192.168.50.52",
+      "port": 22,
+      "ros_domain_id": 42,
+      "type": "robot",
+      "project_path": "~/pg-llm-service-robot"
+    },
+    "workstation": {
+      "name": "Workstation",
+      "host": "192.168.50.50",
+      "port": 22,
+      "ros_domain_id": 42,
+      "type": "workstation",
+      "project_path": "~/pg-llm-service-robot"
+    },
+    "laptop": {
+      "name": "Laptop",
+      "host": "192.168.50.49",
+      "port": 22,
+      "ros_domain_id": 43,
+      "type": "workstation",
+      "project_path": "~/pg-llm-service-robot"
+    }
+  },
+  "settings": {
+    "log_lines_default": 200,
+    "connection_timeout": 10,
+    "command_timeout": 30,
+    "network_interface": "wlx00e04c5d85bd"
+  }
+}

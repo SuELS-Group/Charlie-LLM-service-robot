@@ -1,0 +1,17 @@
+# Enabled only by ROBOT_OPERATION_MODE=study on BOTH hosts. Any number of
+# checked waypoints/objects may be entered. Values are never guessed by the LLM.
+map_name: ''
+service_radius_m: 0.75
+# Each name pins x/y/orientation (map coordinates, metres/degrees).
+# waypoints:
+#   checked_name: {x: <measured>, y: <measured>, orientation: <measured>}
+waypoints: {}
+# Directed pairs, e.g. [[checked_source, checked_destination]]. Check both
+# directions before adding both. This pins endpoints, not the Nav2 path.
+approved_routes: []
+approved_objects: []
+# Optional German/English labels for the same selected physical test object.
+object_aliases: {}
+# Staff select the object used in this trial before starting the action service.
+# This does not perform automatic object recognition or measure mass/size.
+active_object: ''

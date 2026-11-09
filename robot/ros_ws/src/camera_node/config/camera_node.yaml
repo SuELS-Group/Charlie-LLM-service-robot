@@ -1,0 +1,95 @@
+qos:
+  sensor_depth: 1
+diagnostics:
+  status_period_seconds: 1.0
+nav:
+  enabled: false
+  port: /dev/hello-nav-head-camera
+  width: 640
+  height: 480
+  fps: 5
+  exposure: 150
+  min_exposure: 5
+  max_exposure: 2000
+  exposure_step: 10
+  brightness_low: 120
+  brightness_high: 150
+  frame_id: navigation_camera_frame
+  jpeg_quality: 80
+  topic: /cameras/nav/rgb/compressed
+head:
+  enabled: true
+  name: head
+  device_type: d435
+  initial_reset: true
+  width: 640
+  height: 480
+  color_width: 640
+  color_height: 480
+  depth_width: 640
+  depth_height: 480
+  color_fps: 15
+  depth_fps: 15
+  jpeg_quality: 95
+  exposure: 150
+  gain: 64
+  contrast: 50
+  saturation: 75
+  sharpness: 100
+  enable_auto_exposure: false
+  parameter_prefix: rgb_camera
+  set_parameters_service: /cameras/head/rgb_camera/set_parameters
+  image_topic: /cameras/head/color/image_raw
+gripper:
+  enabled: true
+  name: gripper
+  device_type: d405
+  initial_reset: false
+  width: 480
+  height: 270
+  color_fps: 15
+  depth_fps: 15
+  exposure: 10000
+  gain: 64
+  contrast: 50
+  saturation: 75
+  sharpness: 100
+  enable_auto_exposure: false
+  parameter_prefix: depth_module
+  set_parameters_service: /cameras/gripper/depth_module/set_parameters
+  image_topic: /cameras/gripper/color/image_rect_raw
+realsense:
+  command: ros2
+  launch_package: camera_node
+  launch_file: rs_launch.py
+  camera_namespace: cameras
+  enable_color: true
+  enable_depth: true
+  align_depth: true
+  pointcloud: true
+  enable_gyro: false
+  enable_accel: false
+  enable_infra1: false
+  enable_infra2: false
+  color_qos: SENSOR_DATA
+  depth_qos: SENSOR_DATA
+  pointcloud_qos: SENSOR_DATA
+  allow_no_texture_points: true
+  enable_auto_white_balance: false
+  startup_delay_seconds: 2.0
+auto_exposure:
+  feedback_hz: 2.0
+  sample_max_dimension: 320
+  target_brightness: 135
+  tolerance: 15
+  min_exposure: 1
+  max_exposure: 10000
+  min_gain: 16
+  max_gain: 256
+  exposure_scale_up: 1.2
+  exposure_scale_down: 0.8
+  exposure_step: 10
+  gain_step: 4
+shutdown:
+  process_grace_seconds: 0.5
+  process_wait_seconds: 1

@@ -1,0 +1,25 @@
+{
+  "enabled": true,
+  "auto_start": true,
+  "preserve_on_controller_shutdown": true,
+  "bind_host": "0.0.0.0",
+  "advertise_host": "127.0.0.1",
+  "port": 30000,
+  "shared_config_file": "fastdds_discovery_profiles.xml",
+  "server_config_file": "fastdds_server_profiles.xml",
+  "command_template": "/opt/ros/humble/bin/fast-discovery-server -i 0 {listen_args} -x {config_file}",
+  "systemd_unit": "fastdds-discovery-server.service",
+  "systemd_restart_seconds": 2,
+  "startup_wait_ms": 300,
+  "stop_timeout_seconds": 5,
+  "process_env": {
+    "LD_LIBRARY_PATH": "/opt/ros/humble/lib"
+  },
+  "service_env": {
+    "RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
+    "FASTRTPS_DEFAULT_PROFILES_FILE": "{config_file}",
+    "FASTDDS_DEFAULT_PROFILES_FILE": "{config_file}",
+    "ROS_SUPER_CLIENT": "FALSE",
+    "ROS_DISCOVERY_SERVER": "{endpoint}"
+  }
+}

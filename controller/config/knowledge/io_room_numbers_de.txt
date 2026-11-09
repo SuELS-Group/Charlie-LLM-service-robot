@@ -1,0 +1,3 @@
+Die Raumangabe A12 03-315a im IO-Verzeichnis bedeutet Gebäude A12, drittes Obergeschoss, Raum 315a.
+A12 3-315a und A12 03-315a bezeichnen denselben Raum; der Buchstabenzusatz gehört zur Raumnummer.
+Aus einer Raumnummer allein ergibt sich keine Links- oder Rechtsabbiegung vom Wartebereich aus.

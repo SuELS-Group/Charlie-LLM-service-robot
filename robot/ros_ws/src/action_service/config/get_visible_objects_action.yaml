@@ -1,0 +1,6 @@
+timeouts:
+  first_message_seconds: 5.0
+  visible_seconds: 0.6
+detection:
+  min_score: 0.0
+  dedup_distance_m: 0.2

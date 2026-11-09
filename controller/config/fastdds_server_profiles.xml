@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <transport_descriptors>
+        <transport_descriptor>
+            <transport_id>pg_udp_transport</transport_id>
+            <type>UDPv4</type>
+            <!-- Keep RTPS datagrams below the WLAN's 1500-byte IP MTU.
+                 DDS fragments large samples instead of relying on IP reassembly. -->
+            <maxMessageSize>1400</maxMessageSize>
+            <sendBufferSize>4194304</sendBufferSize>
+            <receiveBufferSize>4194304</receiveBufferSize>
+            <non_blocking_send>false</non_blocking_send>
+            <interfaceWhiteList>
+                <address>127.0.0.1</address>
+                <address>192.168.50.49</address>
+                <address>192.168.50.50</address>
+                <address>192.168.50.51</address>
+                <address>192.168.50.52</address>
+            </interfaceWhiteList>
+        </transport_descriptor>
+        <transport_descriptor>
+            <transport_id>pg_shm_transport</transport_id>
+            <type>SHM</type>
+            <segment_size>16777216</segment_size>
+            <port_queue_capacity>512</port_queue_capacity>
+        </transport_descriptor>
+    </transport_descriptors>
+    <participant profile_name="controller_discovery_server" is_default_profile="true">
+        <rtps>
+            <sendSocketBufferSize>1048576</sendSocketBufferSize>
+            <listenSocketBufferSize>4194304</listenSocketBufferSize>
+            <builtin>
+                <discovery_config>
+                    <!-- The discovery-server CLI loads this profile with -x.
+                         Its role must be explicit: CLI server-id/listen options
+                         do not change a SIMPLE XML participant into SERVER. -->
+                    <discoveryProtocol>SERVER</discoveryProtocol>
+                </discovery_config>
+            </builtin>
+            <useBuiltinTransports>false</useBuiltinTransports>
+            <userTransports>
+                <transport_id>pg_udp_transport</transport_id>
+                <transport_id>pg_shm_transport</transport_id>
+            </userTransports>
+        </rtps>
+    </participant>
+</profiles>

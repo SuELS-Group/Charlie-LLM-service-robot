@@ -1,0 +1,26 @@
+[project]
+name = "pg-llm-service-robot-controller"
+version = "0.1.0"
+description = "PG-LLM Service Robot - Controller Components"
+requires-python = ">=3.10"
+dependencies = [
+    # === Web Framework ===
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "websockets>=10.4",
+    "python-multipart>=0.0.7",
+    # === SSH ===
+    "asyncssh>=2.14.0",
+    # === Monitoring ===
+    "psutil>=5.9.0",
+    # === Data Validation ===
+    "pydantic>=2.0.0",
+    "numpy>=1.24,<2.0.0",
+    "opencv-python>=4.8,<4.11",
+    "face_recognition>=1.3.0",
+    "setuptools>=68.0.0,<81.0.0",
+]
+
+[tool.uv]
+# Prefer system Python, but allow managed if needed
+python-preference = "system"

@@ -1,0 +1,10 @@
+string name
+float32 max_pointing_age_seconds
+---
+tool_status/ToolStatus status
+string outcome
+string message
+waypoint_interfaces/Waypoint waypoint
+bool wall_hit
+bool used_hysteresis
+float32 pointing_age_seconds

@@ -1,0 +1,20 @@
+topics:
+  audio: speech_audio_chunk
+  led: control_led
+audio:
+  preferred_input_name: pulse
+  channels: 1
+  dtype: int16
+  sample_rate: 16000
+  block_size: 512
+led:
+  status:
+    speech: speech
+    idle: idle
+vad:
+  source:
+    repo: snakers4/silero-vad
+    model: silero_vad
+  threshold: 0.5
+  min_silence_duration_ms: 1300
+  speech_pad_ms: 200

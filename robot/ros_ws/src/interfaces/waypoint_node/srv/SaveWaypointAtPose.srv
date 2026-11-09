@@ -1,0 +1,4 @@
+waypoint_interfaces/Waypoint waypoint
+---
+tool_status/ToolStatus status
+waypoint_interfaces/Waypoint waypoint

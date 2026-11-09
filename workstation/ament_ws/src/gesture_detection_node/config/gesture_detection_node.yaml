@@ -1,0 +1,85 @@
+topics:
+  image: /cameras/head/color/image_raw/compressed
+  depth_request: /gesture_detection/depth_request
+  depth_response: /gesture_detection/depth_response
+  person_detections: /vision/head
+  handoff_person_detections: /depth_mapping/head/detections
+  map: /map
+  markers: /gesture_detection/markers
+  gesture: /handoff/gripper_gesture
+  control: /handoff/gesture_control
+  status: /handoff/gesture_status
+  overlay: /handoff/hand_gesture/overlay
+services:
+  save_pointed_waypoint: /gesture_detection/save_pointed_waypoint
+  save_waypoint_pose: /waypoint/save_pose
+frames:
+  map: map
+  base: base_link
+image:
+  rotation: ROTATE_90_CLOCKWISE
+qos:
+  image_depth: 1
+timing:
+  # Zero/multiple-person results close the gate immediately. This timeout only
+  # handles a stalled detector and is long enough to avoid camera-subscription
+  # discovery churn between normal head-detector frames.
+  person_detection_ttl_seconds: 2.0
+  gate_check_period_seconds: 0.10
+  pointing_processing_period_seconds: 0.125
+  depth_request_timeout_seconds: 0.75
+  current_pointing_seconds: 0.45
+  hysteresis_seconds: 2.0
+  tf_timeout_seconds: 0.08
+  waypoint_service_timeout_seconds: 3.0
+mediapipe:
+  hand:
+    max_num_hands: 2
+    model_complexity: 0
+    min_detection_confidence: 0.45
+    min_tracking_confidence: 0.45
+  pose:
+    model_path: pose_landmarker_lite.task
+    min_detection_confidence: 0.55
+    min_presence_confidence: 0.55
+    min_tracking_confidence: 0.55
+hand:
+  stable_frames: 3
+  confirmation_window_seconds: 1.5
+  min_hold_seconds: 0.2
+  release_seconds: 0.15
+  max_observation_gap_seconds: 1.5
+  min_confidence: 0.55
+  min_palm_width: 0.02
+  thumb_extension_min: 0.35
+  thumb_upright_min: 0.03
+  folded_finger_max: -0.03
+  min_folded_fingers: 2
+  max_thumb_sideways_ratio: 3.0
+  max_wrist_roll_abs: 1.0
+pointing:
+  stable_frames: 2
+  min_visibility: 0.55
+  min_confidence: 0.55
+  min_arm_angle_degrees: 150.0
+  min_forearm_image_length: 0.045
+  crop_padding_fraction: 0.12
+  min_forearm_length_m: 0.12
+  max_wrist_index_separation_m: 0.35
+  min_downward_direction_z: 0.08
+  max_ground_intersection_distance_m: 12.0
+map:
+  occupied_threshold: 65
+  wall_clearance_m: 0.35
+  raycast_origin_ignore_m: 0.0
+  waypoint_clearance_m: 0.35
+  waypoint_adjustment_m: 1.0
+  robot_start_search_m: 0.60
+debug:
+  # Keep image traffic off by default; the MarkerArray is the lightweight view.
+  publish_hand_overlay: false
+  marker_lifetime_seconds: 1.0
+  arm_line_width_m: 0.035
+  ray_shaft_width_m: 0.025
+  ray_head_width_m: 0.09
+  ray_head_length_m: 0.12

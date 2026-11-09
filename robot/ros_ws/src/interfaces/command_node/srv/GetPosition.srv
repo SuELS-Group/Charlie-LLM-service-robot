@@ -1,0 +1,9 @@
+---
+tool_status/ToolStatus status
+float64 x
+float64 y
+float64 yaw_deg
+float64 qx
+float64 qy
+float64 qz
+float64 qw

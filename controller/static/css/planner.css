@@ -1,0 +1,648 @@
+.planner-page {
+    background: var(--bg-0);
+}
+
+.planner-app {
+    min-height: 100vh;
+}
+
+.planner-topbar-center {
+    max-width: 720px;
+}
+
+.planner-endpoint {
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-2);
+    color: var(--text-1);
+    font-family: var(--mono);
+    font-size: .78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.planner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.planner-live-question,
+.planner-clarification,
+.planner-decision-question {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    overflow-wrap: anywhere;
+}
+
+.planner-live-question,
+.planner-clarification.waiting {
+    border-color: var(--yellow);
+    background: var(--yellow-dim);
+}
+
+.planner-live-question[hidden] {
+    display: none;
+}
+
+.planner-clarification-list {
+    display: grid;
+    gap: 12px;
+}
+
+.planner-live-question p,
+.planner-clarification p,
+.planner-decision-question p {
+    margin: 10px 0;
+    white-space: pre-wrap;
+}
+
+.planner-clarification-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.planner-clarification-meta,
+.planner-clarification small {
+    font-size: .85rem;
+}
+
+.planner-clarification-answer,
+.planner-clarification-rejected {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.planner-clarification-rejected strong {
+    color: var(--yellow);
+}
+
+.planner-decision-question {
+    margin-top: 14px;
+}
+
+.planner-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.planner-overview-card,
+.planner-panel,
+.planner-plan-card,
+.planner-step-card,
+.planner-history-button {
+    border: 1px solid var(--border);
+    background: var(--bg-1);
+}
+
+.planner-overview-card,
+.planner-plan-card,
+.planner-step-card,
+.planner-history-button,
+.planner-response-box,
+.planner-section,
+.planner-meta-chip,
+.planner-plan-meta-card,
+.planner-prompt-debug,
+.planner-prompt-block {
+    border-radius: var(--radius);
+}
+
+.planner-overview-card {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 140px;
+}
+
+.planner-overview-label,
+.planner-section-label,
+.planner-meta-chip span,
+.planner-plan-meta-card span {
+    color: var(--text-2);
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.planner-overview-value {
+    font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.planner-overview-meta,
+.planner-plan-meta,
+.planner-step-meta,
+.planner-history-meta,
+.planner-plan-meta-card small {
+    color: var(--text-1);
+    font-size: .82rem;
+}
+
+.planner-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, .95fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.planner-panel {
+    overflow: hidden;
+}
+
+.planner-panel-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.planner-panel-header h1,
+.planner-panel-header h2,
+.planner-plan-header h3,
+.planner-step-head h4 {
+    font-size: .98rem;
+    font-weight: 600;
+}
+
+.planner-panel-header p,
+.planner-plan-header p,
+.planner-step-head p,
+.planner-response-box p {
+    color: var(--text-1);
+    font-size: .88rem;
+}
+
+.planner-panel-body {
+    padding: 20px;
+}
+
+.planner-empty-state {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-1);
+    text-align: center;
+}
+
+.planner-empty-state.compact {
+    min-height: 120px;
+}
+
+.planner-empty-state svg,
+.planner-empty-state i {
+    width: 28px;
+    height: 28px;
+    color: var(--accent);
+}
+
+.planner-inline-link {
+    color: var(--text-0);
+    text-decoration: underline;
+}
+
+.planner-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: 1px solid transparent;
+}
+
+.planner-badge.active {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-color: rgba(91, 138, 245, .25);
+}
+
+.planner-badge.success {
+    color: var(--green);
+    background: var(--green-dim);
+    border-color: rgba(61, 220, 132, .24);
+}
+
+.planner-badge.warning {
+    color: var(--yellow);
+    background: var(--yellow-dim);
+    border-color: rgba(229, 192, 123, .24);
+}
+
+.planner-badge.failure {
+    color: var(--red);
+    background: var(--red-dim);
+    border-color: rgba(244, 71, 71, .24);
+}
+
+.planner-badge.idle {
+    color: var(--text-1);
+    background: var(--bg-2);
+    border-color: var(--border);
+}
+
+.planner-progress {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.planner-progress-track {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--bg-3);
+}
+
+.planner-progress-track.compact {
+    height: 6px;
+}
+
+.planner-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+}
+
+.planner-session-stack,
+.planner-plan-list,
+.planner-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.planner-section,
+.planner-response-box {
+    padding: 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+}
+
+.planner-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.planner-request-value {
+    font-size: .96rem;
+}
+
+.planner-response-box.error {
+    border-color: rgba(244, 71, 71, .2);
+    background: rgba(244, 71, 71, .06);
+}
+
+.planner-meta-grid,
+.planner-plan-meta-grid,
+.planner-prompt-debug-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.planner-plan-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+}
+
+.planner-meta-chip,
+.planner-plan-meta-card {
+    padding: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.planner-chip-row,
+.planner-args {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.planner-chip,
+.planner-arg-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: .8rem;
+}
+
+.planner-chip.muted,
+.planner-args.muted {
+    color: var(--text-2);
+}
+
+.planner-arg-pill code {
+    font-family: var(--mono);
+    color: var(--text-0);
+}
+
+.planner-plan-card {
+    padding: 16px;
+}
+
+.planner-plan-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.planner-plan-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.planner-plan-progress {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.planner-prompt-debug {
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-2);
+    overflow: hidden;
+}
+
+.planner-prompt-debug summary {
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-0);
+    font-size: .86rem;
+    font-weight: 600;
+}
+
+.planner-prompt-debug summary small,
+.planner-prompt-block-header small {
+    color: var(--text-1);
+    font-weight: 500;
+}
+
+.planner-prompt-debug-body {
+    padding: 0 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.planner-prompt-debug-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.planner-prompt-block {
+    border: 1px solid var(--border);
+    background: var(--bg-1);
+    overflow: hidden;
+}
+
+.planner-prompt-block-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-2);
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.planner-prompt-block-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.planner-copy-button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-2);
+    color: var(--text-1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.planner-copy-button:hover {
+    color: var(--text-0);
+    border-color: var(--text-2);
+}
+
+.planner-copy-button svg,
+.planner-copy-button i {
+    width: 15px;
+    height: 15px;
+}
+
+.planner-prompt-block pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 420px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-0);
+    font-family: var(--mono);
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.planner-step-list {
+    margin-top: 14px;
+    display: grid;
+    gap: 12px;
+}
+
+.planner-step-card {
+    padding: 14px;
+    border-left: 3px solid transparent;
+}
+
+.planner-step-card.active {
+    border-left-color: var(--accent);
+}
+
+.planner-step-card.success {
+    border-left-color: var(--green);
+}
+
+.planner-step-card.warning {
+    border-left-color: var(--yellow);
+}
+
+.planner-step-card.failure {
+    border-left-color: var(--red);
+}
+
+.planner-step-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.planner-step-meta,
+.planner-result-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.planner-result-line {
+    color: var(--text-1);
+}
+
+.planner-result-line strong {
+    color: var(--text-0);
+}
+
+.planner-result-line.error strong,
+.planner-result-line.error span {
+    color: var(--red);
+}
+
+.planner-history-button {
+    width: 100%;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    color: inherit;
+    text-align: left;
+}
+
+.planner-history-button:hover {
+    border-color: var(--text-2);
+    background: var(--bg-2);
+}
+
+.planner-history-button.selected {
+    border-color: var(--accent);
+    background: rgba(91, 138, 245, .08);
+}
+
+.planner-history-main,
+.planner-history-side {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.planner-history-side {
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.planner-history-title {
+    font-size: .9rem;
+}
+
+.planner-task-progress,
+.planner-attempt-error {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+}
+
+.planner-task-progress ol {
+    margin: 12px 0 0;
+    padding-left: 24px;
+}
+
+.planner-task-row {
+    margin: 10px 0;
+    padding-left: 4px;
+}
+
+.planner-task-row .planner-badge {
+    margin-left: 8px;
+}
+
+.planner-task-row small {
+    display: block;
+    color: var(--text-2);
+    margin-top: 4px;
+}
+
+.planner-attempt-error {
+    border-color: var(--red);
+    color: var(--red);
+    margin: 12px 0;
+}
+
+.planner-attempt-error p {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .planner-overview-grid,
+    .planner-layout,
+    .planner-meta-grid,
+    .planner-plan-meta-grid,
+    .planner-prompt-debug-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .planner-panel-header,
+    .planner-plan-header,
+    .planner-step-head,
+    .planner-history-button,
+    .planner-prompt-debug summary,
+    .planner-prompt-block-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .planner-plan-status,
+    .planner-history-side {
+        align-items: flex-start;
+    }
+
+    .planner-endpoint {
+        white-space: normal;
+    }
+}

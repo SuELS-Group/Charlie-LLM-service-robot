@@ -1,0 +1,25 @@
+hardware:
+  vendor_id: 10374
+  product_id: 24
+  timeout: 100000
+  think_brightness: 10
+  trace_brightness: 20
+  spin_brightness: 20
+  max_color_brightness: 20
+topics:
+  control_led: control_led
+qos:
+  subscription_depth: 1
+status:
+  idle:
+    color:
+      r: 0.0
+      g: 0.0
+      b: 1.0
+      a: 0.1
+  action:
+    color:
+      r: 1.0
+      g: 0.0
+      b: 0.0
+      a: 1.0

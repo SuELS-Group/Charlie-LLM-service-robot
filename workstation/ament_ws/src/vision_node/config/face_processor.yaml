@@ -1,0 +1,22 @@
+database:
+  path: controller/config/face_db.json
+recognition:
+  auto: true
+  match_threshold: 0.70
+  # Only identities at or below this distance are published to mapping/RViz.
+  mapping_threshold: 0.60
+  min_face_height: 30
+  detect_model: hog
+  max_input_size: 480
+  # Preserve native pixels when retrying individual YOLO person crops.
+  crop_max_input_size: 480
+  max_faces_per_request: 3
+learning:
+  detect_model: cnn
+  max_input_size: 960
+cache:
+  # Retry unknown tracks promptly while the per-camera pending guard prevents backlog.
+  unknown_retry_seconds: 0.5
+  identity_ttl_seconds: 10.0
+queue:
+  size: 8

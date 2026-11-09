@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>ROS2 Controller</title>
+    <link href="/static/css/base.css?v=20260723-microphone-activity" rel="stylesheet">
+    <link href="/static/css/controller-dashboard.css" rel="stylesheet">
+    <link href="/static/css/battery.css?v=20261109-announcements" rel="stylesheet">
+    <link href="/static/css/dialogs.css" rel="stylesheet">
+    <link href="/static/css/robot-control.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo">
+                <i class="logo-icon" data-lucide="bot"></i>
+                <span>ROS2 Controller</span>
+            </div>
+            <span class="server-status" id="server-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Connecting...</span>
+            </span>
+        </div>
+
+        <div class="topbar-right">
+            <div class="discovery-status" id="discovery-status">
+                <span class="server-dot" id="discovery-dot"></span>
+                <span class="discovery-status-label">Discovery</span>
+                <span class="discovery-status-text" id="discovery-status-text">Checking...</span>
+                <button class="btn btn-ghost btn-sm" id="discovery-restart-btn" onclick="restartDiscoveryServer()"
+                        title="Restart discovery server">
+                    <i data-lucide="rotate-cw"></i>
+                </button>
+            </div>
+            <button class="btn btn-ghost" onclick="refreshAllStatus()" title="Refresh all (R)">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+            <button class="btn btn-ghost" id="ssh-setup-btn" onclick="openSSHSetup()" title="SSH key management">
+                <i data-lucide="key-round"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="openDeployModal()" title="Deploy services">
+                <i data-lucide="upload-cloud"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="reloadConfig()" title="Reload config">
+                <i data-lucide="settings"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="openROSGraphModal()" title="Generate ROS graph">
+                <i data-lucide="share-2"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="openLlmInputModal()" title="Send text to LLM">
+                <i data-lucide="message-square-text"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="openPlannerPage()" title="Open Planner">
+                <i data-lucide="brain"></i>
+            </button>
+            <button class="btn btn-ghost" id="greeting-mode-toggle" onclick="toggleGreetingMode()" disabled title="Greeting node is not running">
+                <i data-lucide="user-x"></i>
+                <span>Greeting Offline</span>
+            </button>
+            <button class="btn btn-ghost" onclick="openFacesPage()" title="Open Face Registry">
+                <i data-lucide="scan-face"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="openVoicesPage()" title="Open Voice Identity">
+                <i data-lucide="audio-lines"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="window.location.href='/knowledge'" title="Open Knowledge Base">
+                <i data-lucide="book-open"></i>
+            </button>
+            <button class="btn btn-ghost" onclick="window.location.href='/monitoring'" title="Open Monitoring">
+                <i data-lucide="activity"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <div id="machines-container">
+            <div class="loading-state">
+                <i class="spin" data-lucide="loader"></i>
+                <span>Connecting to controller...</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Password Modal (styled like SSH modal) -->
+    <div class="modal hidden" id="password-modal">
+        <div class="modal-backdrop" onclick="closePasswordModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="lock"></i> <span id="password-modal-title">Sudo Password</span></h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closePasswordModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="password-modal-body">
+                <form class="password-modal-form" id="password-modal-form">
+                    <label for="password-modal-input" id="password-modal-label">Enter sudo password:</label>
+                    <input autocomplete="current-password" autofocus class="ssh-password-input"
+                           id="password-modal-input"
+                           placeholder="Password" type="password"/>
+                    <div class="password-modal-actions">
+                        <button class="btn btn-ghost btn-sm" id="password-modal-cancel" type="button">Cancel</button>
+                        <button class="btn btn-primary btn-sm" id="password-modal-submit" type="submit">OK</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="log-modal">
+        <div class="modal-backdrop" onclick="closeLogModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="log-modal-title">Logs</h2>
+                <div class="modal-actions">
+                    <div class="log-service-controls" id="log-service-controls">
+                        <button class="btn btn-success btn-sm" id="log-btn-start" onclick="logModalStart()"
+                                title="Start service">
+                            <i data-lucide="play"></i> Start
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="log-btn-stop" onclick="logModalStop()"
+                                title="Stop service">
+                            <i data-lucide="square"></i> Stop
+                        </button>
+                        <button class="btn btn-ghost btn-sm" id="log-btn-restart" onclick="logModalRestart()"
+                                title="Restart service">
+                            <i data-lucide="rotate-cw"></i> Restart
+                        </button>
+                    </div>
+                    <div class="log-header-sep"></div>
+                    <label class="toggle-label">
+                        <input checked id="log-autoscroll" type="checkbox">
+                        <span>Auto-scroll</span>
+                    </label>
+                    <button class="btn btn-ghost btn-sm" onclick="downloadLogs()" title="Download logs">
+                        <i data-lucide="download"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="clearLogs()" title="Clear">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="closeLogModal()" title="Close (Esc)">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="log-container" id="log-container">
+                <pre id="log-content"></pre>
+            </div>
+            <div class="modal-footer">
+                <span class="log-status" id="log-status">
+                    <span class="log-dot"></span>
+                    Disconnected
+                </span>
+                <span id="log-service-status-badge"></span>
+                <span id="log-line-count">0 lines</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="ssh-modal">
+        <div class="modal-backdrop" onclick="closeSSHSetup()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="key-round"></i> SSH Key Setup</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeSSHSetup()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="ssh-modal-body">
+                <div class="loading-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading SSH status...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="deploy-modal">
+        <div class="modal-backdrop" onclick="closeDeployModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="upload-cloud"></i> Deploy Services</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeDeployModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="deploy-modal-body">
+                <div class="loading-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="model-select-modal">
+        <div class="modal-backdrop" onclick="closeModelSelector()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="layers"></i> Select LLM Model</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeModelSelector()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="model-select-body">
+                <div class="loading-state" id="model-select-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading models...</span>
+                </div>
+                <div id="model-select-form" style="display:none">
+                    <label for="model-select-dropdown">Installed models</label>
+                    <select id="model-select-dropdown"></select>
+                    <div style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end">
+                        <button class="btn btn-ghost" id="model-select-cancel">Cancel</button>
+                        <button class="btn btn-primary" id="model-select-save">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal hidden" id="robot-control-modal">
+        <div class="modal-backdrop" onclick="closeRobotControl()"></div>
+        <div class="modal-content robot-control-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="gamepad-2"></i> <span id="robot-control-title">Robot Control</span></h2>
+                <div class="modal-actions">
+                    <span class="robot-control-status" id="robot-control-status">Inactive</span>
+                    <button class="btn btn-ghost btn-sm" onclick="closeRobotControl()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="robot-control-body">
+                <div class="robot-control-summary">
+                    <div class="robot-control-state-card">
+                        <div class="robot-control-state-label">Current state</div>
+                        <div class="robot-control-state" id="robot-control-state">Idle</div>
+                    </div>
+                    <div class="robot-control-metrics">
+                        <div class="robot-control-metric">
+                            <span class="robot-control-state-label">Connection</span>
+                            <span class="robot-control-pill is-connecting"
+                                  id="robot-control-connection">Connecting</span>
+                        </div>
+                        <div class="robot-control-metric">
+                            <span class="robot-control-state-label">Mode</span>
+                            <span class="robot-control-pill" id="robot-control-mode">Unknown</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="robot-control-help">
+                    <p>Use <strong>W / A / S / D</strong> or the <strong>arrow keys</strong> to move the robot.</p>
+                    <p>Hold a key or press and hold the on-screen controls. Releasing, closing this window, or losing
+                        focus sends an immediate stop.</p>
+                    <div class="robot-control-mode-actions">
+                        <button class="btn btn-ghost btn-sm" id="robot-control-mode-position"
+                                onclick="handleRobotControlMode('position')"
+                                title="Switch robot to position mode for manual joint/manipulation control">
+                            <i data-lucide="terminal-square"></i> Position Mode
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="robot-control-mode-navigation"
+                                onclick="handleRobotControlMode('navigation')" title="Switch robot to navigation mode">
+                            <i data-lucide="navigation"></i> Navigation Mode
+                        </button>
+                    </div>
+                </div>
+                <div aria-label="Robot movement controls" class="robot-control-key-grid" role="group">
+                    <div class="robot-control-key-spacer"></div>
+                    <button aria-label="Move forward" class="robot-control-key" data-direction="forward"
+                            id="robot-key-up">
+                        <span class="robot-control-key-icon"><i data-lucide="arrow-up"></i></span>
+                        <span class="robot-control-key-label">W / ↑</span>
+                    </button>
+                    <div class="robot-control-key-spacer"></div>
+                    <button aria-label="Turn left" class="robot-control-key" data-direction="left" id="robot-key-left">
+                        <span class="robot-control-key-icon"><i data-lucide="arrow-left"></i></span>
+                        <span class="robot-control-key-label">A / ←</span>
+                    </button>
+                    <button aria-label="Move backward" class="robot-control-key" data-direction="backward"
+                            id="robot-key-down">
+                        <span class="robot-control-key-icon"><i data-lucide="arrow-down"></i></span>
+                        <span class="robot-control-key-label">S / ↓</span>
+                    </button>
+                    <button aria-label="Turn right" class="robot-control-key" data-direction="right"
+                            id="robot-key-right">
+                        <span class="robot-control-key-icon"><i data-lucide="arrow-right"></i></span>
+                        <span class="robot-control-key-label">D / →</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="llm-input-modal">
+        <div class="modal-backdrop" onclick="closeLlmInputModal()"></div>
+        <div class="modal-content llm-input-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="message-square-text"></i> Send to LLM</h2>
+                <div class="modal-actions">
+                    <span class="llm-input-status" id="llm-input-status">Disconnected</span>
+                    <button class="btn btn-ghost btn-sm" onclick="closeLlmInputModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <form class="llm-input-form" id="llm-input-form">
+                <textarea id="llm-input-text" maxlength="8000" placeholder="Type a message for the robot..."
+                          rows="4"></textarea>
+                <div class="llm-input-actions">
+                    <span id="llm-input-target">Web bridge not connected</span>
+                    <button class="btn btn-primary" id="llm-input-submit" type="submit">
+                        <i data-lucide="send"></i> Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="ros-graph-modal">
+        <div class="modal-backdrop" onclick="closeROSGraphModal()"></div>
+        <div class="modal-content" style="width: 90%; height: 90%; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2><i data-lucide="share-2"></i> ROS 2 Graph</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-primary btn-sm" id="ros-graph-generate-btn" onclick="generateROSGraph()"
+                            title="Generate new graph">
+                        <i data-lucide="refresh-cw"></i> Generate
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="downloadROSGraphPDF()" title="Download PDF">
+                        <i data-lucide="download"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="closeROSGraphModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="ros-graph-container" style="flex: 1; overflow: auto; padding: 1rem;">
+                <div class="loading-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading graph...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="voice-identity-config-modal">
+        <div class="modal-backdrop" onclick="closeVoiceIdentityConfigModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="settings-2"></i> Voice Identity Config</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeVoiceIdentityConfigModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="voice-identity-config-body">
+                <div class="loading-state" id="voice-identity-config-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading config...</span>
+                </div>
+                <div id="voice-identity-config-form" style="display:none; padding: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div>
+                        <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                            <span>Recognition Threshold</span><span id="vi-threshold-value">0.45</span>
+                        </label>
+                        <input type="range" id="vi-threshold" min="0" max="100" step="1" value="45"
+                               style="width: 100%;"
+                               oninput="document.getElementById('vi-threshold-value').textContent = (this.value / 100).toFixed(2)">
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">
+                            Minimum similarity score to identify a speaker (lower = less strict)
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn btn-ghost" onclick="closeVoiceIdentityConfigModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveVoiceIdentityConfig()">Save</button>
+                    </div>
+                    <div id="voice-identity-config-error" style="display:none; color: var(--red); font-size: .85rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="transcriber-config-modal">
+        <div class="modal-backdrop" onclick="closeTranscriberConfigModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="settings-2"></i> Transcriber Config</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeTranscriberConfigModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="transcriber-config-body">
+                <div class="loading-state" id="transcriber-config-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading config...</span>
+                </div>
+                <div id="transcriber-config-form" style="display:none; padding: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div>
+                        <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                            <span>Accuracy vs. Speed (Beam Size)</span><span id="transcriber-beam-value">5</span>
+                        </label>
+                        <input type="range" id="transcriber-beam" min="1" max="10" step="1" value="5"
+                               style="width: 100%;"
+                               oninput="document.getElementById('transcriber-beam-value').textContent = this.value">
+                        <div style="display: flex; justify-content: space-between; font-size: .75rem; color: var(--text-3); margin-top: 0.2rem;">
+                            <span>Faster</span><span>More accurate</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="transcriber-wake-words" style="display: block; font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">Wake Words</label>
+                        <textarea id="transcriber-wake-words" rows="3"
+                                  style="width: 100%; resize: vertical; font-size: .85rem;"
+                                  placeholder="One word per line, e.g.:&#10;charlie"></textarea>
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">One word per line</div>
+                    </div>
+                    <div>
+                        <label for="transcriber-stop-keywords" style="display: block; font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">Stop Keywords</label>
+                        <textarea id="transcriber-stop-keywords" rows="3"
+                                  style="width: 100%; resize: vertical; font-size: .85rem;"
+                                  placeholder="One keyword per line, e.g.:&#10;stop&#10;stopp"></textarea>
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">One keyword per line</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn btn-ghost" onclick="closeTranscriberConfigModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveTranscriberConfig()">Save</button>
+                    </div>
+                    <div id="transcriber-config-error" style="display:none; color: var(--red); font-size: .85rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="vad-config-modal">
+        <div class="modal-backdrop" onclick="closeVadConfigModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="settings-2"></i> Voice Detection Config</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeVadConfigModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="vad-config-body">
+                <div class="loading-state" id="vad-config-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading config...</span>
+                </div>
+                <div id="vad-config-form" style="display:none; padding: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                        <label class="toggle-label" style="font-size: .9rem; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="vad-activity-enabled" checked>
+                            <span>Enable microphone activity glow</span>
+                        </label>
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.4rem;">
+                            Show the green dashboard glow when sound reaches the workstation microphone.
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                            <span>Detection Threshold</span><span id="vad-threshold-value">0.50</span>
+                        </label>
+                        <input type="range" id="vad-threshold" min="0" max="100" step="1" value="50"
+                               style="width: 100%;"
+                               oninput="document.getElementById('vad-threshold-value').textContent = (this.value / 100).toFixed(2)">
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">
+                            Lower = more sensitive, higher = less sensitive
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                            <span>Min Silence Duration</span><span id="vad-silence-value">1300</span> ms
+                        </label>
+                        <input type="range" id="vad-silence" min="200" max="5000" step="100" value="1300"
+                               style="width: 100%;"
+                               oninput="document.getElementById('vad-silence-value').textContent = this.value">
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">
+                            How long silence must last before speech is considered complete
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                            <span>Speech Pad</span><span id="vad-pad-value">200</span> ms
+                        </label>
+                        <input type="range" id="vad-pad" min="0" max="1000" step="50" value="200"
+                               style="width: 100%;"
+                               oninput="document.getElementById('vad-pad-value').textContent = this.value">
+                        <div style="font-size: .78rem; color: var(--text-3); margin-top: 0.25rem;">
+                            Extra padding added to the end of each detected speech segment
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn btn-ghost" onclick="closeVadConfigModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveVadConfig()">Save</button>
+                    </div>
+                    <div id="vad-config-error" style="display:none; color: var(--red); font-size: .85rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="led-config-modal">
+        <div class="modal-backdrop" onclick="closeLedConfigModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="settings-2"></i> LED Control Config</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeLedConfigModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="led-config-body">
+                <div class="loading-state" id="led-config-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading config...</span>
+                </div>
+                <div id="led-config-form" style="display:none; padding: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div>
+                        <div style="font-size: .85rem; font-weight: 600; color: var(--text-1); margin-bottom: 0.75rem;">Brightness</div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                                <span>Thinking</span><span id="led-think-brightness-value">10</span>
+                            </label>
+                            <input type="range" id="led-think-brightness" min="0" max="255" step="1" value="10"
+                                   style="width: 100%;"
+                                   oninput="document.getElementById('led-think-brightness-value').textContent = this.value">
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                                <span>Trace</span><span id="led-trace-brightness-value">20</span>
+                            </label>
+                            <input type="range" id="led-trace-brightness" min="0" max="255" step="1" value="20"
+                                   style="width: 100%;"
+                                   oninput="document.getElementById('led-trace-brightness-value').textContent = this.value">
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                                <span>Spinning</span><span id="led-spin-brightness-value">20</span>
+                            </label>
+                            <input type="range" id="led-spin-brightness" min="0" max="255" step="1" value="20"
+                                   style="width: 100%;"
+                                   oninput="document.getElementById('led-spin-brightness-value').textContent = this.value">
+                        </div>
+                        <div>
+                            <label style="display: flex; justify-content: space-between; font-size: .85rem; color: var(--text-2); margin-bottom: 0.3rem;">
+                                <span>Max Color</span><span id="led-max-color-brightness-value">20</span>
+                            </label>
+                            <input type="range" id="led-max-color-brightness" min="0" max="255" step="1" value="20"
+                                   style="width: 100%;"
+                                   oninput="document.getElementById('led-max-color-brightness-value').textContent = this.value">
+                        </div>
+                    </div>
+                    <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <div style="font-size: .85rem; font-weight: 600; color: var(--text-1); margin-bottom: 0.75rem;">LED Colors</div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <div style="font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">Idle</div>
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <input type="color" id="led-idle-color" value="#0000ff"
+                                       style="width: 48px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
+                                <div style="flex: 1;">
+                                    <label style="display: flex; justify-content: space-between; font-size: .82rem; color: var(--text-2); margin-bottom: 0.2rem;">
+                                        <span>Opacity</span><span id="led-idle-alpha-value">10</span>%
+                                    </label>
+                                    <input type="range" id="led-idle-alpha" min="0" max="100" step="1" value="10"
+                                           style="width: 100%;"
+                                           oninput="document.getElementById('led-idle-alpha-value').textContent = this.value">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">Action</div>
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <input type="color" id="led-action-color" value="#ff0000"
+                                       style="width: 48px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
+                                <div style="flex: 1;">
+                                    <label style="display: flex; justify-content: space-between; font-size: .82rem; color: var(--text-2); margin-bottom: 0.2rem;">
+                                        <span>Opacity</span><span id="led-action-alpha-value">100</span>%
+                                    </label>
+                                    <input type="range" id="led-action-alpha" min="0" max="100" step="1" value="100"
+                                           style="width: 100%;"
+                                           oninput="document.getElementById('led-action-alpha-value').textContent = this.value">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn btn-ghost" onclick="closeLedConfigModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveLedConfig()">Save</button>
+                    </div>
+                    <div id="led-config-error" style="display:none; color: var(--red); font-size: .85rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="tts-config-modal">
+        <div class="modal-backdrop" onclick="closeTtsConfigModal()"></div>
+        <div class="modal-content ssh-modal-content">
+            <div class="modal-header">
+                <h2><i data-lucide="settings-2"></i> TTS Playback Config</h2>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="closeTtsConfigModal()" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="ssh-modal-body" id="tts-config-body">
+                <div class="loading-state" id="tts-config-loading">
+                    <i class="spin" data-lucide="loader"></i>
+                    <span>Loading config...</span>
+                </div>
+                <div id="tts-config-form" style="display:none; padding: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <label class="toggle-label" style="font-size: .9rem; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="tts-feedback-sounds-toggle">
+                        <span>Enable Feedback Sounds</span>
+                    </label>
+                    <div>
+                        <label for="tts-thinking-sound-select" style="display: block; font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">Thinking Sound</label>
+                        <select id="tts-thinking-sound-select" style="width: 100%;"></select>
+                    </div>
+                    <div>
+                        <label for="tts-volume-slider" style="display: block; font-size: .85rem; color: var(--text-2); margin-bottom: 0.4rem;">
+                            Lautstärke Sounds <span id="tts-volume-value">70</span>%
+                        </label>
+                        <input type="range" id="tts-volume-slider" min="0" max="100" step="1" value="70"
+                               style="width: 100%;"
+                               oninput="document.getElementById('tts-volume-value').textContent = this.value">
+                    </div>
+                    <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <div style="font-size: .85rem; color: var(--text-2); margin-bottom: 0.5rem;">Upload custom sound (.mp3, max 10 MB)</div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="file" id="tts-sound-upload-input" accept=".mp3" style="flex: 1; font-size: .82rem; color: var(--text-1);">
+                            <button class="btn btn-ghost btn-sm" id="tts-sound-upload-btn" onclick="uploadTtsSound()">
+                                <i data-lucide="upload"></i> Upload
+                            </button>
+                        </div>
+                        <div id="tts-upload-status" style="display:none; font-size: .8rem; margin-top: 0.4rem;"></div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn btn-ghost" onclick="closeTtsConfigModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveTtsConfig()">Save</button>
+                    </div>
+                    <div id="tts-config-error" style="display:none; color: var(--red); font-size: .85rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="voice-activity-indicator" class="voice-activity-indicator" aria-hidden="true"></div>
+
+<script src="/static/js/controller-core.js"></script>
+<script src="/static/js/controller-battery.js?v=20261109-announcements"></script>
+<script src="/static/js/controller-machines.js?v=20261102-inline-charge"></script>
+<script src="/static/js/controller-logs.js"></script>
+<script src="/static/js/controller-greeting-mode.js"></script>
+<script src="/static/js/controller-ssh.js"></script>
+<script src="/static/js/controller-deploy.js"></script>
+<script src="/static/js/controller-ros-graph.js"></script>
+<script src="/static/js/controller-robot-control.js"></script>
+<script src="/static/js/controller-llm-input.js"></script>
+<script src="/static/js/controller-tts-config.js"></script>
+<script src="/static/js/controller-led-config.js"></script>
+<script src="/static/js/controller-vad-config.js?v=20260723-microphone-toggle"></script>
+<script src="/static/js/controller-transcriber-config.js"></script>
+<script src="/static/js/controller-voice-identity-config.js"></script>
+<script src="/static/js/controller-voice-activity.js?v=20260723-microphone-activity"></script>
+<script src="/static/js/controller-bootstrap.js"></script>
+</body>
+</html>

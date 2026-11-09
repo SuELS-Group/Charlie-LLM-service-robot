@@ -1,0 +1,101 @@
+# SLAM Toolbox Parameters - MAPPING MODE
+# This configuration is optimized for creating and updating maps.
+# Both pose estimation and map construction/modification are active.
+#
+# Key differences from localization mode:
+# - mode: mapping (map is continuously updated)
+# - Loop closure enabled for consistent maps
+# - More aggressive update frequency for map completeness
+#
+# Note: This mode may have less stable pose tracking than localization mode.
+# Use localization mode for stable navigation, and only switch to mapping mode
+# when you explicitly want to create or update the map.
+
+slam_toolbox:
+  ros__parameters:
+
+    # Plugin params - Ceres solver for optimization
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: HuberLoss  # Robust against outliers
+
+    # ROS Parameters
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+
+    # === MAPPING MODE ===
+    # Map is actively updated with new scan data
+    mode: mapping
+
+    # Ignore the robot's own body/arm
+    min_laser_range: 0.2
+    max_laser_range: 12.0
+
+    # Logging and debugging
+    debug_logging: false
+    throttle_scans: 1
+
+    # TF settings - critical for proper operation
+    transform_publish_period: 0.02  # 50Hz transform publishing
+    transform_timeout: 0.5
+    tf_buffer_duration: 10.0  # Reduced from 30.0 for faster recovery from stale TF
+
+    # Map settings
+    resolution: 0.05
+    map_update_interval: 5.0
+
+    # Stack size for large maps
+    stack_size_to_use: 40000000
+
+    # Interactive mode for RViz tools
+    enable_interactive_mode: true
+
+    # === Scan Matching Parameters (tuned for mapping) ===
+    use_scan_matching: true
+    use_scan_barycenter: true
+
+    # Update frequency - more frequent for better initial tracking
+    minimum_time_interval: 0.5      # Process scans as fast as possible
+    minimum_travel_distance: 0.1    # Update every 10cm
+    minimum_travel_heading: 0.017   # Update every ~1 degree for better rotation tracking
+
+    scan_buffer_size: 20            # Larger buffer for more robust matching
+    scan_buffer_maximum_scan_distance: 15.0
+
+    # Matching thresholds for mapping - looser for initial convergence
+    link_match_minimum_response_fine: 0.1
+    link_scan_maximum_distance: 2.5
+
+    # Loop closure - ENABLED for mapping mode
+    do_loop_closing: true
+    loop_search_maximum_distance: 3.0
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.45
+
+    # Correlation Parameters - for scan matching
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    # Loop Closure Parameters
+    loop_search_space_dimension: 8.0
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    # Scan Matcher Parameters
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+
+    fine_search_angle_offset: 0.01      # Wider fine angular search (~0.57°) for better rotation matching
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true

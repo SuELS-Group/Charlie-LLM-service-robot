@@ -1,0 +1,5 @@
+uint8[] wav_data
+float64 issued_at
+---
+bool success
+string message

@@ -1,0 +1,32 @@
+topics:
+  detections: /depth_mapping/head/detections
+  tracks: /person_tracking/tracks
+  markers: /person_tracking/markers
+frames:
+  tracking: odom
+  output: map
+timing:
+  publish_period_seconds: 0.2
+  visible_seconds: 0.5
+  source_binding_seconds: 10.0
+  spatial_reacquire_seconds: 120.0
+  navigation_max_age_seconds: 120.0
+  track_expiry_seconds: 300.0
+  anonymous_track_expiry_seconds: 3.0
+association:
+  base_gate_m: 0.35
+  gate_growth_m_per_second: 0.6
+  max_gate_m: 1.0
+  ambiguity_margin_m: 0.25
+  direct_track_max_jump_m: 2.0
+filter:
+  measurement_sigma_m: 0.15
+  acceleration_sigma_mps2: 1.5
+  navigation_max_stddev_m: 0.75
+confirmation:
+  anonymous_observations: 3
+visualization:
+  show_anonymous_visible: false
+  marker_lifetime_seconds: 1.0
+  marker_radius_m: 0.18
+  text_height_m: 0.22

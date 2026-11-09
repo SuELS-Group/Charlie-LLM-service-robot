@@ -1,0 +1,21 @@
+topics:
+  input: llm_to_robot_communication
+services:
+  play_audio: tts_play_audio
+audio:
+  target_sample_rate: 22050
+  model_sample_rate: 22050
+runtime:
+  model_dir: /tmp/tts_models
+  generation_speed: 1.0
+  provider: cpu
+  num_threads: 2
+models:
+  de:
+    url: https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium.tar.bz2
+    directory: vits-piper-de_DE-thorsten-medium
+    file: de_DE-thorsten-medium.onnx
+  en:
+    url: https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-medium.tar.bz2
+    directory: vits-piper-en_US-ryan-medium
+    file: en_US-ryan-medium.onnx

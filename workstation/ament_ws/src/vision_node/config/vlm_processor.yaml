@@ -1,0 +1,19 @@
+enabled: true
+auto: false
+endpoint:
+  base_url: http://localhost:11434
+request:
+  timeout_seconds: 30
+  direct_query_timeout_seconds: 60
+  rate_limit_seconds: 2.0
+queue:
+  size: 10
+cameras:
+  - head
+session:
+  keep_alive: 10m
+model_profiles:
+  16:
+    model:
+      name: qwen3.5:9b
+      context: 4096

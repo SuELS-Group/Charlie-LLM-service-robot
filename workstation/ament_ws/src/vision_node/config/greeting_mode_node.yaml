@@ -1,0 +1,20 @@
+topics:
+  vision: /vision/head
+  speech: llm_to_robot_communication
+services:
+  execute_action: /execute_action
+state:
+  path: controller/config/greeting_mode.json
+  poll_period_s: 0.5
+recognition:
+  max_face_distance: 0.75
+  min_confirmations: 2
+  detection_ttl_s: 2.0
+greeting:
+  language: de
+  template: "Hallo {name}!"
+  global_cooldown_s: 15.0
+  per_person_cooldown_s: 120.0
+action:
+  type: wave_hand
+  service_wait_timeout_s: 0.5

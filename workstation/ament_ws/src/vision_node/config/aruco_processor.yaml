@@ -1,0 +1,7 @@
+cache:
+  frames: 3
+markers:
+  - id: 5
+    label: table
+  - id: 18
+    label: trash_can

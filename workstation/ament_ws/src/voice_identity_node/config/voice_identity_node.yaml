@@ -1,0 +1,43 @@
+topics:
+  audio: speech_audio_chunk
+  identified_speaker: identified_speaker
+
+audio:
+  sample_rate: 16000
+  min_duration_seconds: 1.0
+  max_duration_seconds: 10.0
+
+model:
+  source: speechbrain/spkrec-ecapa-voxceleb
+  savedir: $PROJECT_PATH/workstation/.cache/speechbrain/spkrec-ecapa-voxceleb
+  device: auto
+
+matching:
+  # Placeholder starting point. Calibrate from real robot/microphone scores.
+  threshold: 0.45
+
+voice_db:
+  path: $PROJECT_PATH/controller/config/voice_db.json
+
+voice_samples:
+  dir: $PROJECT_PATH/controller/static/voice-samples
+  extensions:
+    - .wav
+    - .flac
+    - .mp3
+    - .m4a
+    - .mp4
+    - .aac
+    - .ogg
+    - .oga
+    - .opus
+    - .webm
+    - .weba
+    - .aif
+    - .aiff
+    - .au
+    - .caf
+    - .wma
+  ignore_prefixes:
+    - _
+    - .

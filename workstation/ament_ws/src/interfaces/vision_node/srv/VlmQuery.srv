@@ -1,0 +1,5 @@
+string prompt
+string camera
+---
+tool_status/ToolStatus status
+string response_text

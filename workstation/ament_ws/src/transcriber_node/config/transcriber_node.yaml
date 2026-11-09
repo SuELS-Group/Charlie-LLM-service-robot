@@ -1,0 +1,31 @@
+topics:
+  audio: speech_audio_chunk
+  llm_input: robot_to_llm_communication
+  identified_speaker: identified_speaker
+  led: control_led
+  global_stop: /global_stop
+  clarification: /llm/clarification_window
+
+speaker:
+  # Speaker attribution is best-effort: we use the most recent matched identity.
+  # Tune these to balance attribution accuracy vs added latency.
+  max_age_s: 3.0
+  wait_timeout_s: 1.0
+model:
+  device: cuda
+  beam_size: 5
+language:
+  candidates:
+    - de
+    - en
+  wake_words:
+    - charlie
+  stop_keywords:
+    - stop
+    - stopp
+  global_stop_repeat_threshold: 2
+model_profiles:
+  16:
+    model:
+      size: large
+      compute_type: float16

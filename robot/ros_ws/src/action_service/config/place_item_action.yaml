@@ -1,0 +1,63 @@
+frames:
+  map: map
+  base: base_link
+alignment:
+  passes: 3
+  expected_bearing_deg: -90.0
+  bearing_tolerance_deg: 4.0
+  max_correction_deg: 40.0
+  angular_vel: 0.18
+joints:
+  control:
+    - joint_lift
+    - wrist_extension
+    - joint_wrist_yaw
+    - joint_wrist_pitch
+    - joint_wrist_roll
+    - joint_gripper_finger_left
+place:
+  default_height_m: 0.75
+  arm_extension_m: 0.23
+  arm_body_offset_m: 0.45
+  release_clearance_m: 0.06
+trash:
+  marker_id: 18          # Confirmed in the head camera on 2026-11-09; DICT_6X6_250.
+  approach_distance_m: 0.65
+  max_local_distance_m: 2.5
+arm:
+  min: 0.01
+  max: 0.50
+lift:
+  min: 0.2
+  max: 0.97
+wrist:
+  yaw:
+    stowed: 3.0
+  pitch:
+    down: -0.45
+gripper:
+  joint: joint_gripper_finger_left
+  closed: -0.35
+  open:
+    max: 0.6
+scan:
+  head:
+    current_view_seconds: 1.0
+    pan: -1.57            # likely marker view on the robot's right side
+    tilt: -0.6            # downward tilt for better trash-can marker visibility
+    tilt_neutral: -0.2    # tilt to resume after the scan
+    move_duration: 1.5    # seconds for the trajectory to complete
+    settle_seconds: 0.3   # wait after movement before accepting detections
+    primary_hold_seconds: 3.0
+  dwell_seconds: 2.0      # hold secondary sweep positions a bit longer too
+  tf_timeout_seconds: 0.25
+detection:
+  min_score: 0.15
+  max_age_seconds: 1.2
+final_alignment:
+  passes: 2
+  dwell_seconds: 0.8
+  bearing_tolerance_deg: 2.5
+  max_correction_deg: 12.0
+  angular_vel: 0.12
+  extension_tolerance_m: 0.015

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Voice Identity</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/faces.css" rel="stylesheet">
+    <link href="/static/css/voices.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="faces-page voices-page">
+<div class="app faces-app voices-app">
+    <header class="topbar faces-topbar voices-topbar">
+        <div class="topbar-left">
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='/'" title="Back to controller">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="logo-icon" data-lucide="audio-lines"></i>
+                <span>Voice Identity</span>
+            </div>
+            <span class="server-status" id="voices-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Loading...</span>
+            </span>
+        </div>
+        <div class="topbar-center faces-topbar-center voices-topbar-center">
+            <div class="faces-path" id="voices-db-path">Loading voice database...</div>
+        </div>
+        <div class="topbar-right">
+            <button class="btn btn-ghost btn-sm" id="voices-refresh-btn" title="Refresh">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+            <button class="btn btn-primary btn-sm" id="voices-regenerate-btn" title="Build voice_db.json from samples">
+                <i data-lucide="database-zap"></i>
+                Build DB
+            </button>
+            <button class="btn btn-danger btn-sm" id="voices-remove-all-btn" title="Remove all sample files">
+                <i data-lucide="trash-2"></i>
+                Remove All
+            </button>
+            <button class="btn btn-ghost btn-sm" id="voices-add-btn" title="Add voice sample">
+                <i data-lucide="mic-vocal"></i>
+                Add Recording
+            </button>
+        </div>
+    </header>
+
+    <main class="content faces-content voices-content">
+        <section class="faces-panel voices-panel">
+            <div class="faces-panel-header voices-panel-header">
+                <div>
+                    <h1>Speakers and Samples</h1>
+                    <p id="voices-subtitle">Loading voice samples...</p>
+                </div>
+                <p class="voices-help">Users are read from <code>voice_db.json</code>. New sample-only users appear here until the database is rebuilt.</p>
+            </div>
+            <div class="faces-grid voices-grid" id="voices-grid">
+                <div class="faces-empty-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <p>Loading voices...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="faces-dialog-backdrop hidden" id="voices-dialog">
+    <form class="faces-dialog voices-dialog" id="voices-add-form">
+        <header class="faces-dialog-header">
+            <h2>Add Voice Sample</h2>
+            <button class="btn btn-ghost btn-sm" id="voices-dialog-close" title="Close" type="button">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+        <div class="faces-dialog-body">
+            <div class="voices-speaker-picker">
+                <label>
+                    <span>Speaker</span>
+                    <select id="voices-user-select"></select>
+                </label>
+                <label class="hidden" id="voices-new-user-label">
+                    <span>New speaker name</span>
+                    <input autocomplete="off" id="voices-name-input" placeholder="e.g. u1" type="text">
+                </label>
+                <small class="voices-field-help" id="voices-speaker-help">Choose an existing speaker or create a new one.</small>
+            </div>
+            <label>
+                <span>Source</span>
+                <select id="voices-source-select">
+                    <option value="record">Record with microphone</option>
+                    <option value="file">Upload audio file</option>
+                </select>
+            </label>
+            <label class="hidden" id="voices-file-label">
+                <span>Audio file</span>
+                <input accept="audio/*,.wav,.flac,.mp3,.m4a,.mp4,.aac,.ogg,.oga,.opus,.webm,.weba,.aif,.aiff,.au,.caf,.wma" id="voices-file-input" type="file">
+                <small class="voices-field-help" id="voices-file-help">WAV/FLAC are safest. Other audio formats are accepted when the workstation torchaudio backend can decode them.</small>
+            </label>
+            <div class="voices-recorder" id="voices-recorder">
+                <div class="voices-recorder-actions">
+                    <button class="btn btn-success btn-sm" id="voices-record-start" type="button">
+                        <i data-lucide="circle-dot"></i>
+                        Start Recording
+                    </button>
+                    <button class="btn btn-danger btn-sm" disabled id="voices-record-stop" type="button">
+                        <i data-lucide="square"></i>
+                        Stop
+                    </button>
+                    <button class="btn btn-ghost btn-sm" disabled id="voices-record-clear" type="button">Clear</button>
+                </div>
+                <div class="voices-recording-state" id="voices-recording-state">Record 5-10 seconds of one speaker.</div>
+                <audio class="voices-recording-preview hidden" controls id="voices-recording-preview"></audio>
+            </div>
+        </div>
+        <div class="faces-dialog-actions">
+            <button class="btn btn-ghost btn-sm" id="voices-dialog-cancel" type="button">Cancel</button>
+            <button class="btn btn-primary btn-sm" type="submit">
+                <i data-lucide="plus"></i>
+                Save Sample
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="/static/js/voices.js"></script>
+</body>
+</html>

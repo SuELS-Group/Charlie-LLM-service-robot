@@ -1,0 +1,37 @@
+/**:
+  ros__parameters:
+    host: "0.0.0.0"
+    port: 8766
+    websocket_path: "/ws/robot-control"
+    voice_activity_websocket_path: "/ws/voice-activity"
+    http_port: 8767
+    llm_input_path: "/api/llm-input"
+    cmd_vel_topic: "/stretch/cmd_vel"
+    llm_input_topic: "robot_to_llm_communication"
+    voice_activity_topic: "voice_activity"
+    battery_topic: "/battery"
+    battery_diagnostics_topic: "/diagnostics"
+    # Display estimator only. Charging return continues to use battery_node.
+    # Nominal manufacturer capacity; effective capacity needs measurement.
+    battery_capacity_ah: 18.0
+    battery_median_window_seconds: 5.0
+    battery_voltage_tau_seconds: 30.0
+    battery_current_tau_seconds: 60.0
+    battery_correction_tau_seconds: 900.0
+    battery_warmup_seconds: 30.0
+    battery_runtime_min_history_seconds: 300.0
+    battery_max_sample_age_seconds: 3.0
+    battery_recharge_percentage: 60.0
+    # Uncalibrated charge-retention assumption, separate from nominal capacity.
+    battery_charge_efficiency: 0.9
+    battery_charge_time_min_history_seconds: 60.0
+    # Hello Robot's coarse moderate-load curve, not rested OCV measurements.
+    battery_voltage_curve: [9.5, 0.0, 10.5, 40.0, 11.0, 60.0, 11.5, 80.0, 13.4, 100.0]
+    navigation_mode_service: "/switch_to_navigation_mode"
+    position_mode_service: "/switch_to_position_mode"
+    linear_speed: 0.5
+    angular_speed: 0.45
+    publish_period_seconds: 0.033
+    watchdog_timeout_seconds: 0.75
+    mode_switch_timeout_seconds: 3.0
+    expected_ros_domain_id: -1

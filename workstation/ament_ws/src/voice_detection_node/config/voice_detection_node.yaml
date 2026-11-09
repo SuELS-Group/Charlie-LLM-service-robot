@@ -1,0 +1,25 @@
+activity:
+  enabled: true
+  hold_seconds: 0.8
+  rms_threshold: 0.0015
+audio:
+  block_size: 512
+  channels: 1
+  dtype: int16
+  preferred_input_name: pulse
+  sample_rate: 16000
+led:
+  status:
+    idle: idle
+    speech: speech
+topics:
+  activity: voice_activity
+  audio: speech_audio_chunk
+  led: control_led
+vad:
+  min_silence_duration_ms: 1300
+  source:
+    model: silero_vad
+    repo: snakers4/silero-vad
+  speech_pad_ms: 200
+  threshold: 0.5

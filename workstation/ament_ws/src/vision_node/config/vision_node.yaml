@@ -1,0 +1,64 @@
+topics:
+  pause: /vlm/pause_yolo
+services:
+  vlm_query: /vision_node/vlm_query
+  learn_face: /vision_node/learn_face
+  identify_faces: /vision_node/identify_faces
+  forget_face: /vision_node/forget_face
+status:
+  period_seconds: 1.0
+queue:
+  image_size: 5
+cameras:
+  head:
+    topics:
+      input: /cameras/head/color/image_raw/compressed
+      detections: /vision/head
+      aruco: /vision/head/aruco
+      door: /vision/head/door
+      overlay: /vision/head/overlay
+    image:
+      rotation: ROTATE_90_CLOCKWISE
+      overlay_max_dimension: 960
+      # Zero keeps every available head frame eligible for processing.
+      max_processing_fps: 0
+    classes:
+      target:
+        - ball
+        - bottle
+        - cup
+        - person
+  nav:
+    topics:
+      input: /cameras/nav/rgb/compressed
+      detections: /vision/nav
+      aruco: /vision/nav/aruco
+      door: /vision/nav/door
+      overlay: /vision/nav/overlay
+    image:
+      rotation: ROTATE_90_COUNTERCLOCKWISE
+      overlay_max_dimension: 640
+      max_processing_fps: 0
+    classes:
+      target:
+        - ball
+        - bottle
+        - cup
+        - person
+  gripper:
+    topics:
+      input: /cameras/gripper/color/image_rect_raw/compressed
+      detections: /vision/gripper
+      aruco: /vision/gripper/aruco
+      door: /vision/gripper/door
+      overlay: /vision/gripper/overlay
+    image:
+      rotation:
+      overlay_max_dimension: 640
+      # Reserve worker time for the recognition-first head pipeline. Camera and depth remain at 15 FPS.
+      max_processing_fps: 10
+    classes:
+      target:
+        - ball
+        - bottle
+        - cup

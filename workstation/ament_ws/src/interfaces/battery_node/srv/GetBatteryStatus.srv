@@ -1,0 +1,9 @@
+---
+tool_status/ToolStatus status
+float32 percentage
+float32 voltage
+float32 current
+bool is_charging
+bool present
+string status_text
+string health_check

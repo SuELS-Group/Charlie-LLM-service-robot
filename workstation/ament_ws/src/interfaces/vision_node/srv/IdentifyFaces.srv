@@ -1,0 +1,6 @@
+---
+tool_status/ToolStatus status
+string[] faces
+string[] known_names
+int32 count
+int32 unknown_count

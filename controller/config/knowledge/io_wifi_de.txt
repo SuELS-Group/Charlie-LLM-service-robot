@@ -1,0 +1,3 @@
+Studierende können das WLAN eduroam in öffentlichen Universitätsbereichen wie Hörsälen, Seminarräumen, Bibliothek und Cafeterien nutzen.
+Besucher einer an eduroam teilnehmenden Heimathochschule können an der Universität Oldenburg die eduroam-Zugangsdaten ihrer Heimathochschule verwenden.
+Bei Verbindungs- oder Kontoproblemen helfen die Hinweise der IT-Dienste zum Campusnetz; fremde persönliche Passwörter sind dafür nicht vorgesehen.

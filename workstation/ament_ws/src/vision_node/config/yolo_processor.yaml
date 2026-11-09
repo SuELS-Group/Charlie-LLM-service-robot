@@ -1,0 +1,18 @@
+model:
+  path: /tmp/yolo11x-seg.pt
+runtime:
+  device: cuda:0
+thresholds:
+  confidence: 0.15
+tracking:
+  smooth_factor: 0.2
+  detection_log_interval: 30
+  tracker: botsort_reid.yaml
+inference:
+  use_half: true
+  use_retina_masks: true
+  image_size: 640
+  image_size_by_camera:
+    head: 640
+    nav: 640
+    gripper: 640

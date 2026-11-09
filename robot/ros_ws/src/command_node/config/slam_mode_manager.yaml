@@ -1,0 +1,41 @@
+modes:
+  initial: localization
+  localization: localization
+  mapping: mapping
+paths:
+  map: ~/.stretch_nav/maps/my_slam_map
+  pose: ~/.stretch_nav/state/last_pose.json
+frames:
+  map: map
+  odom: odom
+services:
+  serialize_map: /slam_toolbox/serialize_map
+  switch_to_mapping: /slam_mode_manager/switch_to_mapping
+  switch_to_localization: /slam_mode_manager/switch_to_localization
+  get_current_mode: /slam_mode_manager/get_current_mode
+  serialize_wait_seconds: 2.0
+save:
+  timeout_seconds: 10.0
+  poll_period_seconds: 0.1
+pose:
+  default_x: 0.0
+  default_y: 0.0
+  default_theta: 0.0
+process:
+  command: ros2
+  package: slam_toolbox
+  node_name: slam_toolbox
+  match_name: slam_toolbox
+  localization_executable: localization_slam_toolbox_node
+  mapping_executable: sync_slam_toolbox_node
+  params_package: stretch_nav2
+  params_directory: config
+  params_prefix: mapper_params
+  kill_command: pkill
+  kill_timeout_seconds: 5
+  wait_timeout_seconds: 3
+  startup_grace_seconds: 0.5
+ready:
+  start_delay_seconds: 2.0
+  service_poll_seconds: 0.5
+  tf_timeout_seconds: 1.0

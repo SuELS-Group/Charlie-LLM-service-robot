@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Monitoring</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/monitoring.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="monitoring-page">
+<div class="app monitoring-app">
+    <header class="topbar monitoring-topbar">
+        <div class="topbar-left">
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='/'" title="Back to controller">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="logo-icon" data-lucide="activity"></i>
+                <span>Monitoring</span>
+            </div>
+            <span class="server-status" id="monitoring-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Loading...</span>
+            </span>
+        </div>
+        <div class="topbar-right">
+            <span class="monitoring-clock" id="monitoring-clock">--:--:--</span>
+            <button class="btn btn-ghost btn-sm" onclick="monitoringRefresh()" title="Refresh now">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content monitoring-content">
+        <div class="monitoring-grid">
+
+            <section class="monitoring-section" id="section-network">
+                <div class="monitoring-section-header">
+                    <h2><i data-lucide="wifi"></i> Network Bandwidth</h2>
+                    <span class="monitoring-iface" id="net-iface-label">--</span>
+                    <span class="monitoring-iface-status" id="net-status-indicator">
+                        <span class="server-dot"></span>
+                    </span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-network"></canvas>
+                </div>
+            </section>
+
+            <section class="monitoring-section" id="section-drops">
+                <div class="monitoring-section-header">
+                    <h2><i data-lucide="alert-triangle"></i> Packet Drops &amp; Errors</h2>
+                </div>
+                <div class="drops-grid" id="drops-grid">
+                    <div class="drops-card">
+                        <div class="drops-label">RX Dropped</div>
+                        <div class="drops-value" id="val-rx-dropped">--</div>
+                    </div>
+                    <div class="drops-card">
+                        <div class="drops-label">TX Dropped</div>
+                        <div class="drops-value" id="val-tx-dropped">--</div>
+                    </div>
+                    <div class="drops-card">
+                        <div class="drops-label">RX Errors</div>
+                        <div class="drops-value" id="val-rx-errors">--</div>
+                    </div>
+                    <div class="drops-card">
+                        <div class="drops-label">TX Errors</div>
+                        <div class="drops-value" id="val-tx-errors">--</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="monitoring-section" id="section-heartbeat">
+                <div class="monitoring-section-header">
+                    <h2><i data-lucide="heart-pulse"></i> Robot Services</h2>
+                </div>
+                <div class="topic-bars" id="topic-bars-heartbeat"></div>
+            </section>
+
+            <section class="monitoring-section" id="section-camera">
+                <div class="monitoring-section-header">
+                    <h2><i data-lucide="camera"></i> Camera Services</h2>
+                </div>
+                <div class="topic-bars" id="topic-bars-camera"></div>
+            </section>
+
+            <section class="monitoring-section" id="section-communication">
+                <div class="monitoring-section-header">
+                    <h2><i data-lucide="message-circle"></i> Communication Services</h2>
+                </div>
+                <div class="topic-bars" id="topic-bars-communication"></div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<script src="/static/js/monitoring.js"></script>
+</body>
+</html>

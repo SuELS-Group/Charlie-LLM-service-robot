@@ -1,0 +1,6 @@
+string target
+float64 distance
+---
+tool_status/ToolStatus status
+string target
+float64 distance

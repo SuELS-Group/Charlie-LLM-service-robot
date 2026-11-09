@@ -1,0 +1,16 @@
+scan:
+  head:
+    # Same normal viewing height as navigation/handoff restoration. Never
+    # inherit the downward navigation pose from an earlier failed action.
+    tilt: -0.2
+    steps: 6
+    pan_start: 1.2
+    pan_end: -1.2
+    settle_seconds: 0.12
+    pan_speed_rad_per_sec: 0.4
+  dwell_seconds: 1.0
+  tf_timeout_seconds: 0.25
+detection:
+  min_score: 0.0
+  min_observations: 2
+  dedup_distance_m: 0.8

@@ -1,0 +1,400 @@
+{
+  "robot": {
+    "nodes": [
+      {
+        "id": "stretch_driver",
+        "name": "Stretch Driver",
+        "description": "Hello Robot Stretch driver (navigation mode)",
+        "command": "ros2 launch stretch_driver stretch_driver.launch.py mode:=navigation broadcast_odom_tf:=True",
+        "type": "launch",
+        "package": "stretch_driver",
+        "launch_file": "stretch_driver.launch.py",
+        "launch_args": "mode:=navigation broadcast_odom_tf:=True",
+        "dependencies": [],
+        "startup_delay": 5,
+        "requires_build": true,
+        "packages_to_build": [
+          "stretch_description",
+          "stretch_core",
+          "stretch_driver"
+        ],
+        "service_name": "ros2-stretch-driver"
+      },
+      {
+        "id": "rplidar",
+        "name": "RPLidar",
+        "description": "RPLidar laser scanner driver",
+        "command": "ros2 launch stretch_core rplidar.launch.py",
+        "type": "launch",
+        "package": "stretch_core",
+        "launch_file": "rplidar.launch.py",
+        "dependencies": [
+          "stretch_driver"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "packages_to_build": [
+          "stretch_core"
+        ],
+        "exec_start_pre": [
+          "-/usr/bin/systemctl --user stop hello-robot-lrf-off.service",
+          "-/usr/bin/pkill -f /usr/bin/hello_robot_lrf_off.py"
+        ],
+        "exec_stop_post": [
+          "-/usr/bin/systemd-run --user --quiet --collect --unit=hello-robot-lrf-off.service /usr/bin/python3 /usr/bin/hello_robot_lrf_off.py"
+        ],
+        "restart": "always",
+        "restart_sec": 3,
+        "start_limit_interval_sec": 60,
+        "start_limit_burst": 3,
+        "service_name": "ros2-rplidar"
+      },
+      {
+        "id": "led_control",
+        "name": "LED Control",
+        "description": "LED strip control node",
+        "command": "ros2 run led_control_node led_control_node",
+        "type": "node",
+        "dependencies": [
+          "stretch_driver"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "led_control_node"
+        ],
+        "service_name": "ros2-led-control"
+      },
+      {
+        "id": "tts_playback",
+        "name": "TTS Playback",
+        "description": "Text-to-speech audio playback",
+        "command": "ros2 run tts_playback_node tts_playback_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "global_stop",
+          "tts_playback_interfaces",
+          "tts_playback_node"
+        ],
+        "service_name": "ros2-tts-playback"
+      },
+      {
+        "id": "camera",
+        "name": "Camera Node",
+        "description": "Camera image capture and publishing",
+        "command": "ros2 run camera_node camera_node",
+        "type": "node",
+        "dependencies": [
+          "stretch_driver"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "camera_node"
+        ],
+        "restart": "on-failure",
+        "restart_sec": 3,
+        "start_limit_interval_sec": 60,
+        "start_limit_burst": 3,
+        "service_name": "ros2-camera"
+      },
+      {
+        "id": "depth_mapping",
+        "name": "Depth Mapping",
+        "description": "Depth image processing and obstacle mapping",
+        "command": "ros2 run depth_mapping_node depth_mapping_node",
+        "type": "node",
+        "dependencies": [
+          "stretch_driver"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "depth_mapping_node"
+        ],
+        "service_name": "ros2-depth-mapping"
+      },
+      {
+        "id": "action_service",
+        "name": "Action Service",
+        "description": "Robot action execution service",
+        "command": "ros2 run action_service action_service_node",
+        "type": "node",
+        "dependencies": [
+          "stretch_driver",
+          "depth_mapping",
+          "person_tracking"
+        ],
+        "startup_delay": 1,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "global_stop",
+          "tool_status",
+          "command_interfaces",
+          "action_interfaces",
+          "action_service"
+        ],
+        "service_name": "ros2-action-service"
+      },
+      {
+        "id": "bringup_all",
+        "name": "Navigation Bringup",
+        "description": "Nav2 + SLAM + command node + waypoints (launch file)",
+        "command": "ros2 launch command_node bringup_all.launch.py",
+        "type": "launch",
+        "package": "command_node",
+        "launch_file": "bringup_all.launch.py",
+        "packages_to_build": [
+          "global_stop",
+          "tool_status",
+          "command_interfaces",
+          "action_interfaces",
+          "waypoint_interfaces",
+          "command_node",
+          "waypoint_node",
+          "stretch_nav2"
+        ],
+        "dependencies": [
+          "stretch_driver",
+          "rplidar"
+        ],
+        "startup_delay": 5,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "service_name": "ros2-bringup-all"
+      },
+      {
+        "id": "person_tracking",
+        "name": "Person Tracking",
+        "description": "Persistent map-relative tracking and RViz markers for recognized people",
+        "command": "ros2 run person_tracking_node person_tracking_node",
+        "type": "node",
+        "dependencies": [
+          "depth_mapping",
+          "bringup_all"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/robot/.venv",
+        "packages_to_build": [
+          "person_tracking_node"
+        ],
+        "service_name": "ros2-person-tracking"
+      }
+    ]
+  },
+  "workstation": {
+    "nodes": [
+      {
+        "id": "voice_detection",
+        "name": "Voice Detection",
+        "description": "Microphone voice activity detection",
+        "command": "ros2 run voice_detection_node voice_detection_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "voice_detection_node"
+        ],
+        "service_name": "ros2-voice-detection"
+      },
+      {
+        "id": "vision",
+        "name": "Vision Node",
+        "description": "Computer vision processing (YOLO / object detection)",
+        "command": "ros2 run vision_node vision_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tool_status",
+          "vision_interfaces",
+          "vision_node"
+        ],
+        "restart": "on-failure",
+        "restart_sec": 3,
+        "start_limit_interval_sec": 60,
+        "start_limit_burst": 3,
+        "service_name": "ros2-vision"
+      },
+      {
+        "id": "gesture_detection",
+        "name": "Gesture Detection",
+        "description": "Workstation MediaPipe thumbs-up and gated right-arm pointing detection",
+        "command": "ros2 run gesture_detection_node gesture_detection_node",
+        "type": "node",
+        "dependencies": [
+          "vision"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tool_status",
+          "waypoint_interfaces",
+          "gesture_detection_node"
+        ],
+        "restart": "on-failure",
+        "restart_sec": 3,
+        "service_name": "ros2-hand-gesture"
+      },
+      {
+        "id": "greeting_mode",
+        "name": "Greeting Mode",
+        "description": "Autonomous known-face greeting coordinator",
+        "command": "ros2 run vision_node greeting_mode_node",
+        "type": "node",
+        "dependencies": [
+          "vision",
+          "tts_synthesis"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tool_status",
+          "action_interfaces",
+          "vision_node"
+        ],
+        "service_name": "ros2-greeting-mode"
+      },
+      {
+        "id": "battery_node",
+        "name": "Battery Node",
+        "description": "Battery status monitoring and publishing",
+        "command": "ros2 run battery_node battery_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tool_status",
+          "battery_interfaces",
+          "battery_node"
+        ],
+        "service_name": "ros2-battery-node"
+      },
+      {
+        "id": "transcriber",
+        "name": "Transcriber",
+        "description": "Speech-to-text transcription (Whisper)",
+        "command": "ros2 run transcriber_node transcriber_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "global_stop",
+          "transcriber_node"
+        ],
+        "extra_env": {
+          "LD_LIBRARY_PATH": "$PROJECT_PATH/workstation/.venv/lib/python3.10/site-packages/onnxruntime/capi"
+        },
+        "service_name": "ros2-transcriber"
+      },
+      {
+        "id": "voice_identity",
+        "name": "Voice Identity",
+        "description": "Speaker recognition from VAD speech chunks (SpeechBrain ECAPA)",
+        "command": "ros2 run voice_identity_node voice_identity_node",
+        "type": "node",
+        "dependencies": [
+          "voice_detection"
+        ],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "voice_identity_node"
+        ],
+        "service_name": "ros2-voice-identity"
+      },
+      {
+        "id": "tts_synthesis",
+        "name": "TTS Synthesis",
+        "description": "Text-to-speech synthesis",
+        "command": "ros2 run tts_synthesis_node tts_synthesis_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tts_playback_interfaces",
+          "tts_synthesis_node"
+        ],
+        "extra_env": {
+          "LD_LIBRARY_PATH": "$PROJECT_PATH/workstation/.venv/lib/python3.10/site-packages/onnxruntime/capi"
+        },
+        "service_name": "ros2-tts-synthesis"
+      },
+      {
+        "id": "web_bridge",
+        "name": "Web Bridge",
+        "description": "WebSocket bridge for smooth browser-based robot control",
+        "command": "ros2 run web_bridge_node web_bridge_node --ros-args --params-file $PROJECT_PATH/workstation/ament_ws/src/web_bridge_node/config/web_bridge_node.yaml",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "web_bridge_node"
+        ],
+        "service_name": "ros2-web-bridge"
+      },
+      {
+        "id": "llm_agent",
+        "name": "LLM Agent",
+        "description": "Large language model planning agent",
+        "command": "python3 launch.py",
+        "working_dir": "$PROJECT_PATH/workstation/llm_node",
+        "type": "node",
+        "dependencies": [],
+        "startup_delay": 0,
+        "requires_build": true,
+        "requires_venv": true,
+        "venv_path": "$PROJECT_PATH/workstation/.venv",
+        "packages_to_build": [
+          "tool_status",
+          "action_interfaces",
+          "battery_interfaces",
+          "command_interfaces",
+          "vision_interfaces",
+          "waypoint_interfaces"
+        ],
+        "service_name": "ros2-llm-agent"
+      }
+    ]
+  }
+}

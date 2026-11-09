@@ -1,0 +1,4 @@
+Für die IO-Sprechstunde am Oldenburger StudierendenServiceCenter klärt der InfoDesk Ihr Beratungsanliegen und gibt ein Warteticket mit QR-Code aus.
+Über den QR-Code sehen Sie, wie viele Personen vor Ihnen warten, und aktuelle Informationen zur Beratungswarteschlange, auch abseits des SSC-Empfangs.
+Studierende der Universität Oldenburg können sich auch mit der CampusCard zur Beratung anmelden und ihr Warteticket in Stud.IP ansehen oder stornieren.
+Die Zahl der wartenden Besucher ergibt keine genaue Wartezeit in Minuten.

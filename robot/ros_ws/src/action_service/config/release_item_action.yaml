@@ -1,0 +1,25 @@
+# Same compact arm posture as the handover cleanup; close only after retraction.
+joints:
+  control:
+    - joint_lift
+    - wrist_extension
+    - joint_wrist_yaw
+    - joint_wrist_pitch
+    - joint_wrist_roll
+    - joint_gripper_finger_left
+arm:
+  min: 0.01
+  max: 0.50
+lift:
+  min: 0.2
+  max: 0.97
+wrist:
+  yaw:
+    stowed: 3.0
+  pitch:
+    down: -0.45
+gripper:
+  joint: joint_gripper_finger_left
+  closed: -0.35
+  open:
+    max: 0.6

@@ -1,0 +1,48 @@
+target_frame: base_link
+pointing_depth:
+  camera: head
+  request_topic: /gesture_detection/depth_request
+  response_topic: /gesture_detection/depth_response
+  target_frame: map
+  slop_seconds: 0.25
+  sample_radius_pixels: 5
+  min_depth_m: 0.20
+  max_depth_m: 8.0
+timing:
+  slop_seconds: 0.15
+  depth_buffer_seconds: 2.0
+  depth_frames_per_second: 15
+  status_period_seconds: 1.0
+qos:
+  depth: 1
+gripper_offset:
+  alpha: 0.2
+  max_norm: 0.25
+  marker_frames:
+    aruco_200: link_aruco_fingertip_left
+    aruco_201: link_aruco_fingertip_right
+cameras:
+  head:
+    obj_sub: /vision/head
+    aruco_sub: /vision/head/aruco
+    door_sub: /vision/head/door
+    depth_sub: /cameras/head/aligned_depth_to_color/image_raw
+    info_sub: /cameras/head/aligned_depth_to_color/camera_info
+    marker_pub: /depth_mapping/head/markers
+    det3d_pub: /depth_mapping/head/detections
+    door_grip_pub: /depth_mapping/head/door_grip
+    frame_override: head_color_optical_frame
+    min_depth_range: 0.05
+    max_depth_range: 10.0
+  gripper:
+    obj_sub: /vision/gripper
+    aruco_sub: /vision/gripper/aruco
+    door_sub: /vision/gripper/door
+    depth_sub: /cameras/gripper/aligned_depth_to_color/image_raw
+    info_sub: /cameras/gripper/aligned_depth_to_color/camera_info
+    marker_pub: /depth_mapping/gripper/markers
+    det3d_pub: /depth_mapping/gripper/detections
+    door_grip_pub: /depth_mapping/gripper/door_grip
+    frame_override: gripper_color_optical_frame
+    min_depth_range: 0.02
+    max_depth_range: 1.0

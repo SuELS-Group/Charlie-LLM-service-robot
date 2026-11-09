@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Face Registry</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/faces.css" rel="stylesheet">
+    <link href="/static/favicon.svg" rel="icon" type="image/svg+xml">
+    <meta content="#101114" name="theme-color">
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="faces-page">
+<div class="app faces-app">
+    <header class="topbar faces-topbar">
+        <div class="topbar-left">
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='/'" title="Back to controller">
+                <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="logo-icon" data-lucide="scan-face"></i>
+                <span>Face Registry</span>
+            </div>
+            <span class="server-status" id="faces-status">
+                <span class="server-dot"></span>
+                <span class="server-status-text">Loading...</span>
+            </span>
+        </div>
+        <div class="topbar-center faces-topbar-center">
+            <div class="faces-path" id="faces-db-path">Loading face database...</div>
+        </div>
+        <div class="topbar-right">
+            <button class="btn btn-ghost btn-sm" id="faces-refresh-btn" title="Refresh">
+                <i data-lucide="refresh-cw"></i>
+            </button>
+            <button class="btn btn-primary btn-sm" id="faces-regenerate-btn" title="Regenerate database from images">
+                <i data-lucide="database-zap"></i>
+                Regenerate DB
+            </button>
+            <button class="btn btn-danger btn-sm" id="faces-remove-all-btn" title="Remove all images">
+                <i data-lucide="trash-2"></i>
+                Remove All
+            </button>
+            <button class="btn btn-ghost btn-sm" id="faces-add-btn" title="Add face image">
+                <i data-lucide="image-plus"></i>
+                Add Image
+            </button>
+        </div>
+    </header>
+
+    <main class="content faces-content">
+        <section class="faces-panel">
+            <div class="faces-panel-header">
+                <div>
+                    <h1>Source Images</h1>
+                    <p id="faces-subtitle">Loading image folder...</p>
+                </div>
+            </div>
+            <div class="faces-grid" id="faces-grid">
+                <div class="faces-empty-state">
+                    <i class="spin" data-lucide="loader"></i>
+                    <p>Loading faces...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="faces-dialog-backdrop hidden" id="faces-dialog">
+    <form class="faces-dialog" id="faces-add-form">
+        <header class="faces-dialog-header">
+            <h2>Add Image</h2>
+            <button class="btn btn-ghost btn-sm" id="faces-dialog-close" title="Close" type="button">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+        <div class="faces-dialog-body">
+            <label>
+                <span>Name</span>
+                <input autocomplete="off" id="faces-name-input" required type="text">
+            </label>
+            <label>
+                <span>Source</span>
+                <select id="faces-source-select">
+                    <option value="file">Upload</option>
+                    <option value="camera">Camera</option>
+                </select>
+            </label>
+            <label id="faces-file-label">
+                <span>Image</span>
+                <input accept="image/*" id="faces-file-input" required type="file">
+            </label>
+            <label>
+                <span>Notes</span>
+                <textarea id="faces-notes-input" placeholder="Optional notes" rows="3"></textarea>
+            </label>
+            <div class="faces-camera hidden" id="faces-camera">
+                <label>
+                    <span>Camera</span>
+                    <select id="faces-camera-select"></select>
+                </label>
+                <div class="faces-camera-preview">
+                    <video autoplay id="faces-camera-video" playsinline></video>
+                </div>
+                <div class="faces-camera-actions">
+                    <button class="btn btn-ghost btn-sm" id="faces-camera-capture" type="button">
+                        <i data-lucide="camera"></i>
+                        Capture
+                    </button>
+                    <button class="btn btn-ghost btn-sm" id="faces-camera-clear" type="button">Clear</button>
+                </div>
+                <div class="faces-camera-snapshot hidden" id="faces-camera-snapshot">
+                    <img alt="Captured image" id="faces-camera-image">
+                </div>
+                <p class="faces-camera-hint" id="faces-camera-hint"></p>
+            </div>
+        </div>
+        <div class="faces-dialog-actions">
+            <button class="btn btn-ghost btn-sm" id="faces-dialog-cancel" type="button">Cancel</button>
+            <button class="btn btn-primary btn-sm" type="submit">
+                <i data-lucide="plus"></i>
+                Add Image
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="/static/js/faces.js"></script>
+</body>
+</html>
