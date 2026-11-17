@@ -5,12 +5,22 @@ topics:
   led: control_led
   global_stop: /global_stop
   clarification: /llm/clarification_window
+  playback: /speech/playback
+
+runtime:
+  backend: qwen
+  whisper_fallback: true
+qwen:
+  python: ~/.local/share/charlie-speech/venvs/qwen-asr/bin/python
+  model: Qwen/Qwen3-ASR-1.7B
+  revision: 7278e1e70fe206f11671096ffdd38061171dd6e5
+  timeout_s: 60
 
 speaker:
   # Speaker attribution is best-effort: we use the most recent matched identity.
   # Tune these to balance attribution accuracy vs added latency.
   max_age_s: 3.0
-  wait_timeout_s: 1.0
+  wait_timeout_s: 0.15
 model:
   device: cuda
   beam_size: 5

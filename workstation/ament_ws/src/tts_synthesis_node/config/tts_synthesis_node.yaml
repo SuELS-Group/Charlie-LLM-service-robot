@@ -3,13 +3,24 @@ topics:
 services:
   play_audio: tts_play_audio
 audio:
-  target_sample_rate: 22050
+  target_sample_rate: 24000
   model_sample_rate: 22050
+  target_lufs: -20.0
+  peak_dbfs: -1.5
 runtime:
+  backend: qwen
+  piper_fallback: true
   model_dir: /tmp/tts_models
   generation_speed: 1.0
   provider: cpu
   num_threads: 2
+  chunk_target_chars: 80
+qwen:
+  python: ~/.local/share/charlie-speech/venvs/qwen-tts/bin/python
+  model: Qwen/Qwen3-TTS-12Hz-1.7B-Base
+  revision: fd4b254389122332181a7c3db7f27e918eec64e3
+  voice_profile: ~/.local/share/charlie-speech/voices/neutral-v1
+  timeout_s: 60
 models:
   de:
     url: https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium.tar.bz2

@@ -5,6 +5,7 @@ import time
 from collections import deque
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
@@ -46,6 +47,8 @@ class LLMNode(Node):
         self._last_dequeued_generation = None
         self._active_context = None
         self._waiting_context = None
+        self._question_audio = None
+        self.playback_subscription = self.create_subscription(String, '/speech/playback', self.playback_callback, 50)
         self.clarification_publisher = self.create_publisher(String,
             getattr(config, 'ros_clarification_topic', '/llm/clarification_window'), 10)
         self._clarification_timer = self.create_timer(.5, self.expire_clarification_window)
@@ -90,7 +93,10 @@ class LLMNode(Node):
             if generation is not None and generation != self.stop_generation:
                 return
             payload = {'text': message, 'lang': supported_language(language),
-                       'issued_at': time.time() if issued_at is None else issued_at}
+                       'issued_at': time.time() if issued_at is None else issued_at, 'speech_id': str(uuid4())}
+            if (self._waiting_context is not None and self._question_audio is not None and
+                    message == self._waiting_context.clarification_question):
+                payload['speech_id'] = self._question_audio['speech_id']
             self.communication_publisher.publish(String(data=json.dumps(payload)))
         self.log.info(f'Published message in {language}: {message}')
 
@@ -136,26 +142,71 @@ class LLMNode(Node):
             if context.is_cancelled() or context.stop_generation != self.stop_generation:
                 return False
             self._waiting_context = context
-            now = time.time()
+            context.clarification_deadline = math.inf
+            self._question_audio = {'speech_id': str(uuid4()), 'speaker': speaker,
+                'timeout_s': min(30.0, timeout_s), 'allow_without_wake_word': allow_without_wake_word,
+                'playback_deadline': time.monotonic() + float(getattr(config, 'clarification_playback_timeout_s', 120.)),
+                'opened': False}
             self.clarification_publisher.publish(String(data=json.dumps({
-                'active': True, 'request_id': context.request_id, 'speaker': speaker,
-                'allow_without_wake_word': allow_without_wake_word, 'issued_at': context.issued_at,
-                'opened_at': now, 'expires_at': now + min(30.0, timeout_s)})))
+                'active': False, 'request_id': context.request_id})))
             return True
+
+    def playback_callback(self, message):
+        try:
+            event = json.loads(message.data)
+        except (ValueError, TypeError):
+            return
+        if not isinstance(event, dict):
+            return
+        with self._message_lock:
+            context, audio = self._waiting_context, self._question_audio
+            if (context is None or audio is None or context.is_cancelled() or
+                    context.stop_generation != self.stop_generation or event.get('request_id') != audio['speech_id']):
+                return
+            if event.get('event') in ('cancelled', 'failed'):
+                context.clarification_deadline = 0.
+                self._waiting_context = self._question_audio = None
+                self.clarification_publisher.publish(String(data=json.dumps({
+                    'active': False, 'request_id': context.request_id})))
+            elif (event.get('event') == 'finished' and event.get('final_segment') is True and
+                    not audio['opened'] and time.monotonic() < audio['playback_deadline']):
+                audio['opened'] = True
+                context.clarification_deadline = time.monotonic() + audio['timeout_s']
+                now = time.time()
+                self.clarification_publisher.publish(String(data=json.dumps({
+                    'active': True, 'request_id': context.request_id, 'speaker': audio['speaker'],
+                    'language': supported_language(getattr(context, 'user_language', 'en')),
+                    'allow_without_wake_word': audio['allow_without_wake_word'], 'issued_at': context.issued_at,
+                    'opened_at': now, 'expires_at': now + audio['timeout_s']})))
+                if self.planner_live_view is not None:
+                    self.planner_live_view.open_clarification_window(context)
+                self.log.info(f'Clarification window opened after playback: request_id={context.request_id}')
+                return
+            else:
+                return
+        self.complete_planner_session(context, 'failure', response_text='Question playback was interrupted or failed.')
 
     def clear_clarification_window(self, context):
         with self._message_lock:
             if self._waiting_context is context:
                 self._waiting_context = None
+                self._question_audio = None
                 self.clarification_publisher.publish(String(data=json.dumps({
                     'active': False, 'request_id': context.request_id})))
+
+    def question_audio_pending(self, context):
+        with self._message_lock:
+            return (self._waiting_context is context and self._question_audio is not None
+                    and not self._question_audio['opened'])
 
     def consume_clarification_window(self, context):
         with self._message_lock:
             if (self._waiting_context is not context or context.is_cancelled() or
+                    self._question_audio is None or not self._question_audio['opened'] or
                     time.monotonic() >= context.clarification_deadline):
                 return False
             self._waiting_context = None
+            self._question_audio = None
             self.clarification_publisher.publish(String(data=json.dumps({
                 'active': False, 'request_id': context.request_id})))
             return True
@@ -163,9 +214,14 @@ class LLMNode(Node):
     def expire_clarification_window(self):
         with self._message_lock:
             context = self._waiting_context
-            if context is None or time.monotonic() < context.clarification_deadline:
+            if context is None:
                 return
+            watchdog = self._question_audio and not self._question_audio['opened'] and time.monotonic() >= self._question_audio['playback_deadline']
+            if not watchdog and time.monotonic() < context.clarification_deadline:
+                return
+            context.clarification_deadline = 0.
             self._waiting_context = None
+            self._question_audio = None
             self.clarification_publisher.publish(String(data=json.dumps({
                 'active': False, 'request_id': context.request_id})))
         self.complete_planner_session(context, 'timeout', response_text=runtime_message(
@@ -193,6 +249,7 @@ class LLMNode(Node):
                 self.clarification_publisher.publish(String(data=json.dumps({
                     'active': False, 'request_id': self._waiting_context.request_id})))
                 self._waiting_context = None
+                self._question_audio = None
             self.pending_user_messages.clear()
             self._request_generations.clear()
             self.new_user_message_available = False
@@ -412,6 +469,13 @@ class LLMNode(Node):
         with self._message_lock:
             payload, issued_at, monitor_event = self._input_metadata(msg.data)
             if issued_at is None or (issued_at and issued_at <= self._last_stop_time):
+                return
+            if payload.get('source') == 'speech' and (
+                    payload.get('final') is not True or payload.get('approved') is not True or
+                    payload.get('lang') not in ('de', 'en') or
+                    not isinstance(payload.get('turn_id'), str) or not 0 < len(payload['turn_id']) <= 128 or
+                    not issued_at):
+                self.log.info('Ignored speech without final turn approval')
                 return
             reason = None
             possession_report = (gripper_possession_report(payload.get('text', msg.data))

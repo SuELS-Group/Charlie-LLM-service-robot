@@ -1,5 +1,8 @@
 uint8[] wav_data
 float64 issued_at
+string request_id
+uint32 segment_index
+bool final_segment
 ---
 bool success
 string message

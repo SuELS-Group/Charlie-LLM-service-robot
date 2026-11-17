@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 from workstation_common.config import load
+from robot_common.speech_playback import PlaybackBuffer
 
 root = Path(__file__).resolve().parents[3]
 def source_config(package, name=None, **_kwargs):
@@ -16,7 +17,7 @@ def source_config(package, name=None, **_kwargs):
 
 with patch('workstation_common.get_config', side_effect=source_config):
     from tts_synthesis_node.tts_synthesis_node import TTSSynthesisNode
-    from transcriber_node.transcriber_node import TranscriberNode
+    from transcriber_node.transcriber_node import AudioTurn, TranscriberNode
     from battery_node.battery_node import BatteryNode
 with patch('robot_common.get_config', side_effect=source_config):
     from tts_playback_node.tts_playback_node import TTSPlaybackNode
@@ -57,9 +58,13 @@ def test_synthesis_selects_corrected_voice_and_retains_request_time(text, hint, 
         encode_wav=TTSSynthesisNode.encode_wav, audio_client=Mock(), engines=engines)
     TTSSynthesisNode.listener_callback(n, SimpleNamespace(data=json.dumps(
         {'text': text, 'lang': hint, 'issued_at': 150})))
-    engines[expected].generate.assert_called_once()
+    assert engines[expected].generate.call_count == 2
     engines[hint].generate.assert_not_called()
-    assert n.audio_client.call_async.call_args.args[0].issued_at == 150
+    requests = [call.args[0] for call in n.audio_client.call_async.call_args_list]
+    assert all(request.issued_at == 150 for request in requests)
+    assert len({request.request_id for request in requests}) == 1
+    assert [request.segment_index for request in requests] == list(range(len(requests)))
+    assert [request.final_segment for request in requests] == [False] * (len(requests) - 1) + [True]
     n.log.info.assert_any_call(f'TTS language corrected from {hint} to {expected} based on text')
 
 
@@ -77,17 +82,17 @@ def test_corrected_language_cannot_revive_speech_issued_before_stop():
 
 def test_playback_rejects_audio_issued_before_stop():
     n = SimpleNamespace(log=Mock(), _last_stop_time=200, buffer_lock=threading.Lock(),
-                        audio_buffer=np.array([], dtype=np.int16))
+                        playback=PlaybackBuffer(48000))
     wav = TTSSynthesisNode.encode_wav(np.array([10, 20], dtype=np.int16), 22050)
     response = TTSPlaybackNode.play_audio_callback(n, SimpleNamespace(wav_data=list(wav), issued_at=150), SimpleNamespace())
-    assert not response.success and len(n.audio_buffer) == 0
+    assert not response.success and not n.playback.take(1, 0)[1]
     response = TTSPlaybackNode.play_audio_callback(n, SimpleNamespace(wav_data=list(wav), issued_at=250), SimpleNamespace())
-    assert response.success and len(n.audio_buffer) > 0
+    assert response.success and n.playback.take(1, 0)[1]
 
 
 def test_transcriber_stop_clears_buffer_and_queued_speech():
     n = SimpleNamespace(_input_lock=threading.Lock(), _stop_generation=0,
-                        _last_stop_time=0,
+                        _last_stop_time=0, _playback_requests={},
                         speech_buffer=[np.array([1])], transcription_queue=queue.Queue())
     n.transcription_queue.put(('old', 0, 150))
     TranscriberNode.global_stop_callback(n, stop())
@@ -102,8 +107,7 @@ def transcriber(speaker=None):
         _last_stop_time=0, _last_window_opened=0, _clarification_window={
             'request_id': 'task-1', 'speaker': speaker, 'opened_at': now - 1, 'expires_at': now + 20},
         publisher_=Mock(), global_stop_publisher=Mock(), transcription_queue=queue.Queue())
-    segment = SimpleNamespace(text='Ja', avg_logprob=-.1)
-    n.whisper_model = SimpleNamespace(transcribe=lambda *_a, **_k: ([segment], None))
+    n.recognizer = SimpleNamespace(name='test', transcribe=lambda _audio, **_kw: {'text': 'Ja', 'language': 'de'})
     n._maybe_prefix_transcript = Mock(side_effect=lambda text, **_kw: f'[User {speaker}]: {text}' if speaker else text)
     n.clarification_reply_id = lambda wake, stamp: TranscriberNode.clarification_reply_id(n, wake, stamp)
     n.transcribe_segment = lambda *args: TranscriberNode.transcribe_segment(n, *args)
@@ -113,17 +117,16 @@ def transcriber(speaker=None):
 @pytest.mark.parametrize('speaker', ['testuserc', None])
 def test_asr_requires_charlie_for_all_speakers_by_default(speaker):
     n, now = transcriber(speaker)
-    n.transcribe_segment(np.array([1], dtype=np.int16), 0, now)
+    n.transcribe_segment(AudioTurn(np.array([1], dtype=np.int16), 0, now, 'test-turn'))
     n.publisher_.publish.assert_not_called()
 
 
 @pytest.mark.parametrize('speaker', ['TestUserB', None])
 def test_asr_binds_charlie_reply_without_waiting_for_a_matching_identity(speaker):
     n, now = transcriber('TestUserD')
-    segment = SimpleNamespace(text='Hey, Charlie grabbing point', avg_logprob=-.1)
-    n.whisper_model.transcribe = lambda *_a, **_k: ([segment], None)
+    n.recognizer.transcribe = lambda _audio, **_kw: {'text': 'Hey, Charlie grabbing point', 'language': 'en'}
     n._maybe_prefix_transcript = Mock(side_effect=lambda text, **_kw: f'[User {speaker}]: {text}' if speaker else text)
-    n.transcribe_segment(np.array([1], dtype=np.int16), 0, now)
+    n.transcribe_segment(AudioTurn(np.array([1], dtype=np.int16), 0, now, 'test-turn'))
     payload = json.loads(n.publisher_.publish.call_args.args[0].data)
     assert payload['clarification_id'] == 'task-1'
     assert 'grabbing point' in payload['text']
@@ -134,8 +137,8 @@ def test_transcription_exception_does_not_kill_the_worker_or_leak_queue_tasks(mo
     import transcriber_node.transcriber_node as module
     n, now = transcriber('testuserc')
     n._clarification_window['allow_without_wake_word'] = True
-    n.transcription_queue.put((np.array([1], dtype=np.int16), 0, now))
-    n.transcription_queue.put((np.array([2], dtype=np.int16), 0, now))
+    n.transcription_queue.put(AudioTurn(np.array([1], dtype=np.int16), 0, now, 'a'))
+    n.transcription_queue.put(AudioTurn(np.array([2], dtype=np.int16), 0, now, 'b'))
     original = n.transcribe_segment
     def segment(*args):
         if n.transcribe_segment.call_count == 1:

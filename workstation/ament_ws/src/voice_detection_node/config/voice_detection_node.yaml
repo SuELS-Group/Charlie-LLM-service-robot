@@ -8,6 +8,18 @@ audio:
   dtype: int16
   preferred_input_name: pulse
   sample_rate: 16000
+  preroll_ms: 320
+  max_turn_seconds: 30
+endpoint:
+  enabled: true
+  python: ~/.local/share/charlie-speech/venvs/turn/bin/python
+  model: pipecat-ai/smart-turn-v3
+  revision: f766f81d3cfdf7737ac64aad813d91bbfd56bf93
+  file: smart-turn-v3.2-cpu.onnx
+  timeout_s: 15
+  candidate_silence_ms: 400
+  max_silence_s: 3.0
+  threshold: 0.95
 led:
   status:
     idle: idle

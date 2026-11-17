@@ -93,6 +93,9 @@ def parse_tts_request(raw_data: str):
     issued_at = data.get('issued_at', 0.0)
     if not isinstance(issued_at, (int, float)) or not math.isfinite(issued_at):
         return None
+    speech_id = data.get('speech_id')
+    if speech_id is not None and (not isinstance(speech_id, str) or not 1 <= len(speech_id) <= 128):
+        return None
     language_hint = supported_language(data.get('lang'))
     return SimpleNamespace(text=text, lang=speech_language(text, language_hint),
-                           language_hint=language_hint, issued_at=float(issued_at))
+                           language_hint=language_hint, issued_at=float(issued_at), speech_id=speech_id)

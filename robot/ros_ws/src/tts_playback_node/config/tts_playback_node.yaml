@@ -1,5 +1,7 @@
 audio:
-  sample_rate: 22050
+  sample_rate: 48000
+  block_size: 960
+  peak_dbfs: -1.5
   channels: 1
   dtype: float32
 enable_feedback_sounds: false
@@ -8,6 +10,7 @@ sounds_volume: 70
 topics:
   global_stop: /global_stop
   control_led: control_led
+  playback: /speech/playback
 services:
   play_audio: tts_play_audio
 qos:

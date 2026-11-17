@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import math
 import threading
 import time
 from collections import deque
@@ -333,7 +334,8 @@ class PlannerLiveView:
                 remaining = max(0.0, context.clarification_deadline - time.monotonic())
                 question = {'question': response_text or context.clarification_question,
                     'state': 'waiting', 'asked_at': now,
-                    'expires_at': (datetime.now(timezone.utc) + timedelta(seconds=remaining)).isoformat(),
+                    'expires_at': (datetime.now(timezone.utc) + timedelta(seconds=remaining)).isoformat()
+                        if math.isfinite(remaining) else None,
                     'reply_index': len(context.followups), 'answer': '', 'answered_at': None,
                     'plan_id': next((plan['id'] for plan in reversed(session['plans'])
                         if plan['action'] == 'ask_user'), None),
@@ -351,7 +353,9 @@ class PlannerLiveView:
                         self._update_question_plan_locked(session, question, status)
             session['status'] = status
             session['phase'] = 'awaiting_input' if awaiting else 'idle'
-            session['phase_detail'] = 'Waiting for your reply — say Charlie, then your answer' if awaiting else ''
+            session['phase_detail'] = 'Waiting for your reply' if awaiting else ''
+            if awaiting and not math.isfinite(context.clarification_deadline):
+                session['phase_detail'] = 'Speaking the question'
             session['response_text'] = response_text or ''
             session['knowledge_outcome'] = context.knowledge_outcome
             session['planning_error'] = copy.deepcopy(context.planning_error)
@@ -370,6 +374,20 @@ class PlannerLiveView:
                 self._history.appendleft(copy.deepcopy(session))
                 self._current_session = None
                 self._set_agent_state_locked('idle', None)
+            self._touch_locked()
+        self._broadcast_snapshot()
+
+    def open_clarification_window(self, context):
+        with self._lock:
+            session = self._require_current_session_locked(self._session_id(context))
+            if session is None:
+                return
+            remaining = max(0., context.clarification_deadline - time.monotonic())
+            for question in reversed(session['clarifications']):
+                if question['state'] == 'waiting':
+                    question['expires_at'] = (datetime.now(timezone.utc) + timedelta(seconds=remaining)).isoformat()
+                    break
+            session['phase_detail'] = 'Waiting for your reply'
             self._touch_locked()
         self._broadcast_snapshot()
 

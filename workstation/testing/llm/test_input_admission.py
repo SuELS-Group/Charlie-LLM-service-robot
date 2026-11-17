@@ -66,6 +66,23 @@ def test_invalid_input_timestamp_is_ignored():
     assert not n.pending_user_messages
 
 
+@pytest.mark.parametrize('approval', [
+    {'final': None}, {'final': False}, {'approved': False}, {'turn_id': ''}, {'lang': 'zh'},
+])
+def test_unapproved_speech_cannot_start_a_request(approval):
+    n = node()
+    envelope = {'source': 'speech', 'final': True, 'approved': True, 'turn_id': 'audio-turn', **approval}
+    n.robot_message_callback(voice(**envelope))
+    assert not n.pending_user_messages
+    assert not n.function_call_publisher.published_messages
+
+
+def test_approved_speech_can_enter_the_user_queue():
+    n = node()
+    n.robot_message_callback(voice(source='speech', final=True, approved=True, turn_id='audio-turn'))
+    assert len(n.pending_user_messages) == 1
+
+
 def test_human_corrections_are_queued_during_a_task_and_latest_report_wins():
     n = node()
     context = ExecutionContext('current pickup')

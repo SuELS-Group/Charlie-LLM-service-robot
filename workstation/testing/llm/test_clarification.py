@@ -23,6 +23,15 @@ def make_context():
         mcp = SimpleNamespace(llm_callable_tools=[{'name': 'move_to_waypoint',
             'parameters': [{'name': 'name', 'required': True}]}], call_tool=call)
         node = LLMNode('out', 'commands', 'input', 'info', 'response', PlannerLiveView(enabled=True))
+        # These task-routing tests assume the question has already been heard.
+        set_window = node.set_clarification_window
+        def heard_question(*args, **kwargs):
+            result = set_window(*args, **kwargs)
+            if result:
+                node.playback_callback(SimpleNamespace(data=json.dumps({'event': 'finished',
+                    'request_id': node._question_audio['speech_id'], 'final_segment': True})))
+            return result
+        node.set_clarification_window = heard_question
         context = UserContext(mcp, node, client=SimpleNamespace())
         node.user_context = context
         context.executor.recovery_path = None
@@ -45,6 +54,24 @@ def make_context():
 def message(text, reply_id=None, speaker='TestUserC'):
     return json.dumps({'text': f'[User {speaker}]: {text}' if speaker else text,
                       'lang': 'de', 'clarification_id': reply_id})
+
+
+@pytest.mark.asyncio
+async def test_live_question_waits_for_its_actual_playback(make_context):
+    ctx, node, calls, _ = make_context([AgentDecision('ask_user', answer='Welche Sprache?')])
+    node.set_clarification_window = LLMNode.set_clarification_window.__get__(node, LLMNode)
+    response = await ctx.process(message('Charlie, ich habe eine Frage'))
+    pending = ctx.pending_interaction
+    question = node.planner_live_view.get_snapshot()['current_session']['clarifications'][-1]
+    assert question['expires_at'] is None
+    assert not node.consume_clarification_window(pending.context)
+    node.publish_message(response, 'de')
+    node.playback_callback(SimpleNamespace(data=json.dumps({'event': 'finished',
+        'request_id': node._question_audio['speech_id'], 'final_segment': True})))
+    question = node.planner_live_view.get_snapshot()['current_session']['clarifications'][-1]
+    assert question['expires_at'] is not None
+    assert 29 < pending.context.clarification_deadline - time.monotonic() <= 30
+    assert not calls
 
 
 @pytest.mark.asyncio

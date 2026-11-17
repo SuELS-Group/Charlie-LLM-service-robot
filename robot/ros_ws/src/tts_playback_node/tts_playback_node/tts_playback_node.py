@@ -13,7 +13,10 @@ from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from robot_common import get_config, get_logger
-from scipy.signal import resample
+from scipy.signal import resample_poly
+from math import gcd
+from uuid import uuid4
+from robot_common.speech_playback import PlaybackBuffer
 from std_msgs.msg import String
 
 from global_stop.msg import GlobalStop
@@ -31,7 +34,9 @@ class TTSPlaybackNode(Node):
         stop_qos = QoSProfile(reliability=ReliabilityPolicy.RELIABLE, history=HistoryPolicy.KEEP_LAST, depth=config.qos.stop_depth, durability=DurabilityPolicy.VOLATILE)
         self.create_subscription(GlobalStop, config.topics.global_stop, self.stop_callback, stop_qos)
         self.create_subscription(String, config.topics.control_led, self.on_control_led, config.qos.control_led_depth)
-        self.audio_buffer = np.array([], dtype=np.int16)
+        self.playback = PlaybackBuffer(config.audio.sample_rate)
+        self.event_publisher = self.create_publisher(String, config.topics.playback, 50)
+        self.event_timer = self.create_timer(.01, self.publish_playback_events)
         self.buffer_lock = threading.Lock()
         self._last_stop_time = 0.0
         self._sound_looping = False
@@ -72,8 +77,8 @@ class TTSPlaybackNode(Node):
                 data = data.mean(axis=1)
             target_sr = config.audio.sample_rate
             if sr != target_sr:
-                num_samples = int(len(data) * target_sr / sr)
-                data = resample(data, num_samples).astype(np.float32)
+                factor = gcd(sr, target_sr)
+                data = resample_poly(data, target_sr // factor, sr // factor).astype(np.float32)
             self.log.info(f'Loaded {filename}: {sr}Hz -> {target_sr}Hz, {len(data)} samples')
             return data
         except Exception as e:
@@ -96,10 +101,13 @@ class TTSPlaybackNode(Node):
             wav = wav.mean(axis=1)
         target_sample_rate = config.audio.sample_rate
         if sample_rate != target_sample_rate:
-            num_samples = int(len(wav) * target_sample_rate / sample_rate)
-            wav = resample(wav, num_samples).astype(np.float32)
-        wav = np.clip(wav, -1.0, 1.0)
-        samples = (wav * 32767.0).astype(np.int16)
+            factor = gcd(sample_rate, target_sample_rate)
+            wav = resample_poly(wav, target_sample_rate // factor, sample_rate // factor).astype(np.float32)
+        if not np.isfinite(wav).all():
+            response.success, response.message = False, 'Non-finite audio rejected'
+            return response
+        ceiling = 10 ** (config.audio.peak_dbfs / 20.)
+        samples = np.clip(wav, -ceiling, ceiling).astype(np.float32)
         if len(samples) == 0:
             response.success = False
             response.message = 'Decoded WAV data contained no samples'
@@ -110,7 +118,11 @@ class TTSPlaybackNode(Node):
                 response.success = False
                 response.message = 'Audio from before the global stop was discarded'
                 return response
-            self.audio_buffer = np.concatenate((self.audio_buffer, samples))
+            supplied_id = getattr(request, 'request_id', '')
+            request_id = supplied_id or str(uuid4())
+            self.playback.enqueue(samples, {'request_id': request_id, 'issued_at': issued_at or time.time(),
+                'segment_index': getattr(request, 'segment_index', 0),
+                'final_segment': bool(getattr(request, 'final_segment', True)) if supplied_id else True})
         response.success = True
         response.message = f'Queued {len(samples)} samples'
         self.log.info(response.message)
@@ -162,7 +174,7 @@ class TTSPlaybackNode(Node):
         with self.buffer_lock:
             stamp = msg.stamp.sec + msg.stamp.nanosec / 1e9
             self._last_stop_time = max(self._last_stop_time, stamp or time.time())
-            self.audio_buffer = np.array([], dtype=np.int16)
+            self.playback.stop()
         self._sound_looping = False
         with self._effect_lock:
             self._effect_buffer = np.array([], dtype=np.float32)
@@ -171,17 +183,10 @@ class TTSPlaybackNode(Node):
 
     def start_stream(self):
         def callback(outdata, frames, time_info, status):
-            del time_info
             if status:
                 self.log.warning(str(status))
-            tts = np.zeros(frames, dtype=np.float32)
-            tts_had_data = False
-            with self.buffer_lock:
-                if len(self.audio_buffer) > 0:
-                    n = min(len(self.audio_buffer), frames)
-                    tts[:n] = self.audio_buffer[:n].astype(np.float32) / 32768.0
-                    self.audio_buffer = self.audio_buffer[n:]
-                    tts_had_data = True
+            latency = max(0., time_info.outputBufferDacTime - time_info.currentTime)
+            tts, tts_had_data = self.playback.take(frames, time.time() + latency)
             effect = np.zeros(frames, dtype=np.float32)
             with self._effect_lock:
                 if len(self._effect_buffer) > 0:
@@ -199,14 +204,21 @@ class TTSPlaybackNode(Node):
                         vol = max(0.0, min(1.0, getattr(config, 'sounds_volume', 70) / 100.0))
                         thinking[:n] = self._thinking_buffer[:n] * vol
                         self._thinking_buffer = self._thinking_buffer[n:]
-            outdata[:, 0] = np.clip(tts + effect + thinking, -1.0, 1.0)
+            ceiling = 10 ** (config.audio.peak_dbfs / 20.)
+            outdata[:, 0] = np.clip(tts + effect + thinking, -ceiling, ceiling)
 
-        self.stream = sd.OutputStream(samplerate=config.audio.sample_rate, channels=config.audio.channels, dtype=config.audio.dtype, callback=callback)
+        self.stream = sd.OutputStream(samplerate=config.audio.sample_rate, channels=config.audio.channels, dtype=config.audio.dtype, blocksize=config.audio.block_size, callback=callback)
         self.stream.start()
         self.log.info('Audio output stream started')
 
+    def publish_playback_events(self):
+        for event in self.playback.events():
+            self.event_publisher.publish(String(data=json.dumps(event)))
+
     def destroy_node(self):
         self.log.info('Shutting down TTS playback node')
+        self.playback.stop()
+        self.publish_playback_events()
         if self.stream:
             self.stream.stop()
             self.stream.close()

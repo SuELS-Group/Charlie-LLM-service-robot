@@ -24,8 +24,9 @@ agent_initial_tool_limit: 10
 agent_tool_add_limit: 10
 agent_temperature: 0.0
 clarification_timeout_s: 30.0
+clarification_playback_timeout_s: 120.0
 # Applies to all speakers; identity is never required to answer a question.
-clarification_allow_without_wake_word: false
+clarification_allow_without_wake_word: true
 ros_clarification_topic: '/llm/clarification_window'
 # External planner traces are opt-in. Restart ros2-llm-agent after changing this.
 planner_logging_enabled: false

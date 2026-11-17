@@ -100,6 +100,9 @@ class UserContext:
         previous_steps, previous_results = [], []
         if pending and not new_request:
             context = pending.context
+            if self.llm_node and self.llm_node.question_audio_pending(context):
+                log.info('Ignoring an early reply while the question is still being spoken')
+                return ''
             if self.llm_node and not self.llm_node.consume_clarification_window(context):
                 self._close_pending(ExecutionStatus.STOPPED if context.is_cancelled() else ExecutionStatus.TIMEOUT)
                 return self._reject_input(user_input, asr_language, 'clarification_expired')
