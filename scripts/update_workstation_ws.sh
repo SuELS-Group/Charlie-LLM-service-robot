@@ -55,13 +55,14 @@ _ws_setup_venv() {
   fi
 
   source "$target_venv/bin/activate"
-  uv sync --active $uv_flags
+  uv sync --locked --active $uv_flags
 }
 
 _ws_setup_ros_env() {
   unset AMENT_PREFIX_PATH
   unset CMAKE_PREFIX_PATH
   unset COLCON_PREFIX_PATH
+  unset PYTHONPATH LD_LIBRARY_PATH
   source /opt/ros/humble/setup.bash
   pg_source_tf2_fix "$PROJECT_ROOT" || return 1
 }
@@ -182,16 +183,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _run_command() {
     if [[ -n "$_VENV" ]]; then
       source "$_VENV/bin/activate"
-      _ws_setup_runtime_libs "$_VENV"
     else
       source "$UV_VENV/bin/activate"
-      _ws_setup_runtime_libs "$UV_VENV"
     fi
     _ws_setup_ros_env
-    if [[ -f "$WS_PATH/install/setup.bash" ]]; then
-      source "$WS_PATH/install/setup.bash"
+    if [[ -f "$WS_PATH/install/local_setup.bash" ]]; then
+      source "$WS_PATH/install/local_setup.bash"
     fi
     pg_source_tf2_fix "$PROJECT_ROOT"
+    _ws_setup_runtime_libs "${_VENV:-$UV_VENV}"
     if [[ -n "$_ROS_DOMAIN_ID" ]]; then
       export ROS_DOMAIN_ID="$_ROS_DOMAIN_ID"
     fi
@@ -232,8 +232,8 @@ else
   _ws_setup_runtime_libs "$UV_VENV"
   _ws_setup_ros_env || return 1
   _ws_build "$_NODE_NAME"
-  if [[ -f "$WS_PATH/install/setup.bash" ]]; then
-    source "$WS_PATH/install/setup.bash" || true
+  if [[ -f "$WS_PATH/install/local_setup.bash" ]]; then
+    source "$WS_PATH/install/local_setup.bash" || true
   fi
   pg_source_tf2_fix "$PROJECT_ROOT" || return 1
   cd "$_ORIG_PWD" || return 1

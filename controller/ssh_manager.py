@@ -279,9 +279,28 @@ class SSHConnectionManager:
                 return False, "Refusing to deploy an invalid service filename"
             list_cmd = (f"find {svc_dir} -maxdepth 1 -type f -name 'ros2-*.service' "
                         "-printf '%f\\n'")
-            _, installed_stdout, _ = await self.execute(machine_id, list_cmd, timeout=10)
+            code, installed_stdout, stderr = await self.execute(machine_id, list_cmd, timeout=10)
+            if code != 0:
+                return False, f"Failed to inspect installed services: {stderr}"
             installed_filenames = {line.strip() for line in installed_stdout.splitlines() if
                 re.fullmatch(r"ros2-[A-Za-z0-9_.@-]+\.service", line.strip())}
+            migrated_filenames = []
+            for svc in services:
+                if svc["filename"] not in installed_filenames:
+                    continue
+                expected = re.search(r"^ExecStart=(\S+)", svc["content"], re.MULTILINE)
+                code, loaded_start, stderr = await self.execute(machine_id,
+                    f"systemctl --user show {self._shell_quote(svc['filename'])} -p ExecStart --value", timeout=10)
+                if code != 0:
+                    return False, f"Failed to inspect {svc['filename']}: {stderr}"
+                loaded_paths = re.findall(r"\bpath=([^ ;]+)", loaded_start)
+                if expected and loaded_paths and loaded_paths != [expected.group(1)]:
+                    migrated_filenames.append(svc["filename"])
+            if migrated_filenames:
+                units = " ".join(self._shell_quote(name) for name in migrated_filenames)
+                code, _, stderr = await self.execute(machine_id, f"systemctl --user stop {units}", timeout=30)
+                if code != 0:
+                    return False, f"Failed to stop services from the previous checkout: {stderr}"
             obsolete_filenames = sorted(installed_filenames - desired_filenames)
             if obsolete_filenames:
                 obsolete_units = " ".join(self._shell_quote(name) for name in obsolete_filenames)
@@ -300,7 +319,9 @@ class SSHConnectionManager:
             exit_code, _, stderr = await self.execute(machine_id, "systemctl --user daemon-reload", timeout=15)
             if exit_code != 0:
                 return False, f"daemon-reload failed: {stderr}"
-            message = f"Deployed {len(deployed)} services without interrupting running services"
+            message = (f"Deployed {len(deployed)} services; stopped {len(migrated_filenames)} services "
+                       "from the previous checkout. Start them manually." if migrated_filenames else
+                       f"Deployed {len(deployed)} services without interrupting running services")
             if obsolete_filenames:
                 message += f"; removed {len(obsolete_filenames)} obsolete services"
             return True, message

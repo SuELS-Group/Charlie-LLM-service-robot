@@ -47,7 +47,7 @@ _robot_setup_venv() {
   if [[ ! -d ".venv" ]]; then
     uv venv $uv_flags --python 3.10
   fi
-  uv sync $uv_flags
+  uv sync --locked $uv_flags
   source "$UV_VENV/bin/activate"
 }
 
@@ -55,6 +55,7 @@ _robot_setup_ros_env() {
   unset AMENT_PREFIX_PATH
   unset CMAKE_PREFIX_PATH
   unset COLCON_PREFIX_PATH
+  unset PYTHONPATH LD_LIBRARY_PATH
   source /opt/ros/humble/setup.bash
   # The upstream workspace was once built while this project overlay was
   # sourced, so its setup.bash chains back into this workspace. Source only

@@ -2,6 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import argparse
+import getpass
+import os
+import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from string import Template
 from typing import Any, Dict, List
@@ -75,8 +82,8 @@ def expand_variables(value: str, project_path: str, venv_path: str = "") -> str:
 
 def generate_service_file(node: Dict[
     str, Any], machine_type: str, ros_domain_id: int, project_path: str, user: str, venv_path: str = "", discovery_env:
-Dict[str, str] | None = None, ) -> str:
-    home_dir = f"/home/{user}"
+Dict[str, str] | None = None, fleet_id: str = "stretch", home_dir: str | None = None, ) -> str:
+    home_dir = home_dir or f"/home/{user}"
     scripts_dir = f"{project_path}/scripts"
     expanded_venv = expand_variables(venv_path, project_path) if venv_path else ""
     description = node.get("description", f"ROS2 {node['name']} node")
@@ -95,7 +102,7 @@ Dict[str, str] | None = None, ) -> str:
     extra_env_lines = ['Environment="PYTHONUNBUFFERED=1"']
     if machine_type == "robot":
         extra_env_lines.append(f'Environment="HELLO_FLEET_PATH={home_dir}/stretch_user"')
-        extra_env_lines.append(f'Environment="HELLO_FLEET_ID=stretch"')
+        extra_env_lines.append(f'Environment="HELLO_FLEET_ID={fleet_id}"')
         extra_env_lines.append(f'Environment="LRS_LOG_LEVEL=None"')
     for env_key, env_val in node_extra_env.items():
         expanded_val = expand_variables(env_val, project_path, expanded_venv)
@@ -158,7 +165,7 @@ def generate_all_services(config_dir: Path, output_dir: Path, advertise_host_ove
     for machine_id, machine in machines_config.get("machines", {}).items():
         machine_type = machine["type"]
         ros_domain_id = machine.get("ros_domain_id", 0)
-        project_path = machine.get("project_path", "~/pg-llm-service-robot")
+        project_path = machine.get("project_path", "~/Charlie-LLM-service-robot")
         project_path = project_path.replace("~", "/home/" + machine["user"])
         machine_nodes = nodes_config.get(machine_type, {}).get("nodes", [])
         machine_output_dir = output_dir / machine_id
@@ -169,7 +176,8 @@ def generate_all_services(config_dir: Path, output_dir: Path, advertise_host_ove
             service_name = node["service_name"]
             discovery_env = build_service_env(discovery_config, domain_id=ros_domain_id, project_path=project_path, )
             service_content = generate_service_file(node=node, machine_type=machine_type, ros_domain_id=ros_domain_id, project_path=project_path, user=
-            machine["user"], venv_path=node.get("venv_path", ""), discovery_env=discovery_env, )
+            machine["user"], venv_path=node.get("venv_path", ""), discovery_env=discovery_env,
+            fleet_id=machine_id if re.fullmatch(r"stretch-se3-[0-9]{4}", machine_id) else "stretch", )
             filename = f"{service_name}.service"
             service_file = machine_output_dir / filename
             service_file.write_text(service_content)
@@ -205,7 +213,114 @@ echo "They must be started manually via the webui or systemctl start."
     return result
 
 
+def local_service_definitions(project_root: Path, machine_type: str, *, ros_domain_id: int | None = None,
+                              fleet_id: str | None = None, discovery_host: str | None = None) -> List[Dict[str, str]]:
+    """Use this checkout directly, without requiring controller SSH credentials."""
+    project_root = project_root.resolve()
+    config_dir = project_root / "controller/config"
+    machines = json.loads((config_dir / "machines.json").read_text())["machines"]
+    if machine_type == "robot":
+        if fleet_id is None:
+            system_config = Path("/etc/hello-robot/hello-robot.conf")
+            match = re.search(r"^\s*(?:export\s+)?HELLO_FLEET_ID=['\"]?(stretch-se3-[0-9]{4})['\"]?\s*$",
+                              system_config.read_text(), re.MULTILINE) if system_config.exists() else None
+            fleet_id = match.group(1) if match else os.environ.get("HELLO_FLEET_ID")
+        if not fleet_id or not re.fullmatch(r"stretch-se3-[0-9]{4}", fleet_id):
+            raise ValueError("Specify this robot's --fleet-id stretch-se3-XXXX")
+        matching = machines.get(fleet_id, {})
+    else:
+        local_ip = detect_private_discovery_ip(m.get("host", "") for m in machines.values()
+                                               if m["type"] == "workstation")
+        matching = next((m for m in machines.values() if m["type"] == "workstation"
+                         and m.get("host") == local_ip), {})
+    domain = ros_domain_id if ros_domain_id is not None else matching.get("ros_domain_id", 42)
+    discovery = load_discovery_config(config_dir)
+    discovery_host = discovery_host or next((m["host"] for m in machines.values()
+        if m["type"] == "workstation" and m.get("ros_domain_id", 42) == domain), None)
+    if not discovery_host:
+        raise ValueError("Specify --discovery-host with the controller's robot-network IP")
+    discovery["advertise_host"] = discovery_host
+    nodes = json.loads((config_dir / "nodes.json").read_text())[machine_type]["nodes"]
+    services = []
+    for node in nodes:
+        name = node["service_name"]
+        if not re.fullmatch(r"ros2-[A-Za-z0-9_.@-]+", name):
+            raise ValueError(f"Invalid service name: {name}")
+        content = generate_service_file(node, machine_type, domain, str(project_root), getpass.getuser(),
+            node.get("venv_path", ""), build_service_env(discovery, domain_id=domain, project_path=str(project_root)),
+            fleet_id=fleet_id or "stretch", home_dir=str(Path.home()))
+        services.append({"filename": f"{name}.service", "service_name": name, "content": content})
+    return services
+
+
+def install_local_services(project_root: Path, machine_type: str, services: List[Dict[str, str]]) -> Path:
+    """Replace project user units, stopping old processes; never start or enable nodes."""
+    project_root = project_root.resolve()
+    workspace = project_root / ("robot/ros_ws" if machine_type == "robot" else "workstation/ament_ws")
+    venv = project_root / ("robot/.venv" if machine_type == "robot" else "workstation/.venv")
+    if not (workspace / "install/local_setup.bash").is_file() or not (venv / "bin/python").exists():
+        raise RuntimeError("Build this checkout's ROS workspace and Python environment before installing services")
+    service_dir = Path.home() / ".config/systemd/user"
+    installed = sorted(service_dir.glob("ros2-*.service"))
+    desired = {service["filename"] for service in services}
+    if not desired or len(desired) != len(services) or any(
+            not re.fullmatch(r"ros2-[A-Za-z0-9_.@-]+\.service", name) for name in desired):
+        raise ValueError("Refusing an empty or invalid service set")
+    for path in installed:
+        if (service_dir / f"{path.name}.d").exists():
+            raise RuntimeError(f"Review service overrides before migrating: {path.name}.d")
+    # Verify the entire replacement before stopping anything or replacing files.
+    with tempfile.TemporaryDirectory(prefix="charlie-services-") as staging:
+        paths = []
+        for service in services:
+            path = Path(staging) / service["filename"]
+            path.write_text(service["content"])
+            paths.append(str(path))
+        subprocess.run(["systemd-analyze", "--user", "verify", *paths], check=True)
+    backup_parent = Path.home() / ".local/state/Charlie-LLM-service-robot/service-backups"
+    backup_parent.mkdir(parents=True, exist_ok=True)
+    backup = Path(tempfile.mkdtemp(prefix="units-", dir=backup_parent))
+    for path in installed:
+        shutil.copy2(path, backup / path.name)
+    if installed:
+        subprocess.run(["systemctl", "--user", "stop", *(p.name for p in installed)], check=True)
+    obsolete = [p for p in installed if p.name not in desired]
+    if obsolete:
+        subprocess.run(["systemctl", "--user", "disable", *(p.name for p in obsolete)], check=True)
+        for path in obsolete:
+            path.unlink()
+    service_dir.mkdir(parents=True, exist_ok=True)
+    for service in services:
+        path = service_dir / service["filename"]
+        temporary = path.with_suffix(".service.tmp")
+        temporary.write_text(service["content"])
+        temporary.chmod(0o644)
+        temporary.replace(path)
+    subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+    print(f"Installed {len(services)} services from {project_root}. Services remain stopped. Backup: {backup}")
+    return backup
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Generate or install this checkout's ROS user services")
+    parser.add_argument("--install-local", choices=("robot", "workstation"),
+                        help="Replace local ROS services; stop existing nodes without starting new ones")
+    parser.add_argument("--ros-domain-id", type=int)
+    parser.add_argument("--fleet-id")
+    parser.add_argument("--discovery-host")
+    parser.add_argument("--dry-run", action="store_true", help="Print local unit definitions without installing")
+    args = parser.parse_args()
+    if args.install_local:
+        services = local_service_definitions(_SOURCE_PATH.parent.parent, args.install_local,
+            ros_domain_id=args.ros_domain_id, fleet_id=args.fleet_id, discovery_host=args.discovery_host)
+        if args.dry_run:
+            for service in services:
+                print(f"# {service['filename']}\n{service['content']}")
+        else:
+            if os.geteuid() == 0:
+                parser.error("Run as the normal ROS user, not root")
+            install_local_services(_SOURCE_PATH.parent.parent, args.install_local, services)
+        return
     script_dir = Path(__file__).parent
     config_dir = script_dir / "config"
     output_dir = script_dir / "generated_services"

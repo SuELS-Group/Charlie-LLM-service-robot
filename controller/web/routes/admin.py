@@ -119,15 +119,11 @@ async def api_deploy_services(machine_id: str):
         raise HTTPException(status_code=404, detail=f"Machine {machine_id} not found")
     if not ssh_manager.is_connected(machine_id):
         raise HTTPException(status_code=503, detail=f"Not connected to {machine_id}")
-    machine_dir = state.GENERATED_DIR / machine_id
-    if not machine_dir.exists():
-        raise HTTPException(status_code=404, detail=f"No generated services for {machine_id}. Generate first.", )
-    services = []
-    for service_file in sorted(machine_dir.glob("*.service")):
-        services.append({
-            "filename": service_file.name,
-            "service_name": service_file.stem,
-            "content": service_file.read_text(), })
+    # Stored files can predate a checkout move or a machine configuration edit.
+    # Always deploy units generated from the current config and source.
+    result = generate_all_services(state.CONFIG_DIR, state.GENERATED_DIR,
+                                  advertise_host_override=detect_private_discovery_ip())
+    services = result.get(machine_id, [])
     if not services:
         raise HTTPException(status_code=404, detail=f"No .service files found for {machine_id}", )
     success, message = await ssh_manager.deploy_service_files(machine_id, services)

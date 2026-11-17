@@ -401,7 +401,7 @@ def _shell_quote(value: str) -> str:
 
 
 def _machine_project_path(config: MachineConfig) -> str:
-    project_path = config.project_path or "~/pg-llm-service-robot"
+    project_path = config.project_path or "~/Charlie-LLM-service-robot"
     if project_path.startswith("~") and config.user:
         return project_path.replace("~", f"/home/{config.user}", 1)
     return project_path
