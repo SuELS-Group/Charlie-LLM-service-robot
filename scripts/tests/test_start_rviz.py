@@ -74,6 +74,14 @@ class RvizEnvironmentTests(unittest.TestCase):
         self.assertEqual(output['env']['ROS_DOMAIN_ID'], '43')
         self.assertEqual(output['args'][-3:], ['--ros-args', '-p', 'example:=value with spaces'])
 
+    def test_old_checkout_import_paths_are_not_inherited(self):
+        variables = ('AMENT_PREFIX_PATH', 'CMAKE_PREFIX_PATH', 'COLCON_PREFIX_PATH',
+                     'PYTHONPATH', 'LD_LIBRARY_PATH')
+        self.env.update({variable: '/old-checkout/install' for variable in variables})
+        output = self.run_launcher()
+        for variable in variables:
+            self.assertNotIn('/old-checkout', output['env'].get(variable, ''))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@
       "port": 22,
       "ros_domain_id": 43,
       "type": "robot",
-      "project_path": "~/pg-llm-service-robot"
+      "project_path": "~/Charlie-LLM-service-robot"
     },
     "stretch-se3-3152": {
       "name": "Stretch ohne Hut",
@@ -14,7 +14,7 @@
       "port": 22,
       "ros_domain_id": 42,
       "type": "robot",
-      "project_path": "~/pg-llm-service-robot"
+      "project_path": "~/Charlie-LLM-service-robot"
     },
     "workstation": {
       "name": "Workstation",
@@ -22,7 +22,7 @@
       "port": 22,
       "ros_domain_id": 42,
       "type": "workstation",
-      "project_path": "~/pg-llm-service-robot"
+      "project_path": "~/Charlie-LLM-service-robot"
     },
     "laptop": {
       "name": "Laptop",
@@ -30,7 +30,7 @@
       "port": 22,
       "ros_domain_id": 43,
       "type": "workstation",
-      "project_path": "~/pg-llm-service-robot"
+      "project_path": "~/Charlie-LLM-service-robot"
     }
   },
   "settings": {

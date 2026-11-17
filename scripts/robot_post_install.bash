@@ -168,38 +168,6 @@ there were no mechanical/contact-threshold warnings, and you answered yes to
 with Hello Robot support before continuing. Log: $COMMAND_LOG" SAVED
 }
 
-sync_project_meshes() {
-    # Tool configuration updates the official workspace. Our overlay must also
-    # have the mesh assets referenced by the freshly calibrated URDF.
-    # package://stretch_description resolves to this overlay; missing files do
-    # not fall back to the official package. These local copies are gitignored.
-    /usr/bin/python3 - "$ROBOT_WS/src/stretch_ros2/stretch_description" \
-        "$AMENT_WS/src/stretch_ros2/stretch_description" "$RUN_DIR/model-backup" <<'PY'
-import pathlib
-import shutil
-import sys
-import xml.etree.ElementTree as ET
-overlay, upstream, backup = map(pathlib.Path, sys.argv[1:])
-for mesh in ET.parse(overlay / 'urdf/stretch.urdf').iter('mesh'):
-    uri = mesh.get('filename', '')
-    prefix = 'package://stretch_description/'
-    if not uri.startswith(prefix):
-        continue
-    relative = pathlib.Path(uri[len(prefix):])
-    if relative.is_absolute() or '..' in relative.parts:
-        sys.exit(f'Invalid mesh path: {uri}')
-    source, target = upstream / relative, overlay / relative
-    if source.is_file() and (not target.is_file() or target.read_bytes() != source.read_bytes()):
-        if target.exists():
-            saved = backup / relative
-            saved.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(target, saved)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-    if not target.is_file():
-        sys.exit(f'Missing model mesh: {target}')
-PY
-}
 
 check_system_report() {
     SYSTEM_CHECK_NOTES=""
@@ -295,7 +263,7 @@ Other warnings, failures, and incomplete reports must be resolved before this st
     log_info "Gamepad autostart is optional (Startup Applications -> hello_robot_gamepad_teleop)."
     log_info "Leave it disabled when the project's controller owns the robot, to avoid competing commands."
     log_info "Before normal mobile operation, disconnect the charger, confirm the clamp is removed, and clear the workspace."
-    log_info "Open a new terminal for the project environment. Deploy/start services from the controller Web UI."
+    log_info "Open a new terminal for the project environment. Start the installed services from the controller Web UI."
 }
 
 post_install_main() {

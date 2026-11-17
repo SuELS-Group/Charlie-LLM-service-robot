@@ -23,10 +23,11 @@ ROBOT_WS="$ROBOT_DIR/ros_ws"
 SYSTEM_CONFIG=/etc/hello-robot/hello-robot.conf
 STATE_DIR="$HOME/.local/state/pg-llm-service-robot"
 STEP_COUNT=0
-TOTAL_STEPS=9
+TOTAL_STEPS=10
 DDS_NETWORK_SKIPPED=false
 CHECK_ONLY=false
 FLEET_ID=""
+ROBOT_ROS_DOMAIN_ID=""
 
 RED='' GREEN='' YELLOW='' BLUE='' CYAN='' NC='' BOLD=''
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
@@ -56,6 +57,8 @@ Usage: bash scripts/full_robot_setup.bash [--check-only] [--fleet-id stretch-se3
 
   --check-only   Validate prerequisites without installing or changing anything.
   --fleet-id ID  Select a backup when several stretch-se3-XXXX directories exist.
+  --ros-domain-id ID
+                Override the domain from controller/config/machines.json (default 42).
   --post-install [--status]
                 Run the guided hardware setup, or inspect its status without changes.
                 Use this option alone (with optional --status).
@@ -294,6 +297,39 @@ print(f"Previous project calibration files preserved in {backup}")
 PY
 }
 
+sync_project_meshes() {
+    # Tool configuration updates the official workspace. Our overlay must also
+    # have the mesh assets referenced by the freshly calibrated URDF.
+    # package://stretch_description resolves to this overlay; missing files do
+    # not fall back to the official package. These local copies are gitignored.
+    /usr/bin/python3 - "$ROBOT_WS/src/stretch_ros2/stretch_description" \
+        "$AMENT_WS/src/stretch_ros2/stretch_description" "${RUN_DIR:-$STATE_DIR}/model-backup" <<'PY'
+import pathlib
+import shutil
+import sys
+import xml.etree.ElementTree as ET
+overlay, upstream, backup = map(pathlib.Path, sys.argv[1:])
+for mesh in ET.parse(overlay / 'urdf/stretch.urdf').iter('mesh'):
+    uri = mesh.get('filename', '')
+    prefix = 'package://stretch_description/'
+    if not uri.startswith(prefix):
+        continue
+    relative = pathlib.Path(uri[len(prefix):])
+    if relative.is_absolute() or '..' in relative.parts:
+        sys.exit(f'Invalid mesh path: {uri}')
+    source, target = upstream / relative, overlay / relative
+    if source.is_file() and (not target.is_file() or target.read_bytes() != source.read_bytes()):
+        if target.exists():
+            saved = backup / relative
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target, saved)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    if not target.is_file():
+        sys.exit(f'Missing model mesh: {target}')
+PY
+}
+
 main() {
     if [[ "${1:-}" == --post-install ]]; then
         shift
@@ -305,6 +341,9 @@ main() {
             --fleet-id)
                 [[ $# -ge 2 && "$2" =~ ^stretch-se3-[0-9]{4}$ ]] || die "Use --fleet-id stretch-se3-XXXX"
                 FLEET_ID="$2"; shift 2 ;;
+            --ros-domain-id)
+                [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "Use --ros-domain-id with a nonnegative integer"
+                ROBOT_ROS_DOMAIN_ID="$2"; shift 2 ;;
             --help|-h) show_help; return 0 ;;
             *) die "Unknown argument: $1 (see --help)" ;;
         esac
@@ -323,6 +362,16 @@ main() {
     [[ -z "${VIRTUAL_ENV:-}" && -z "${CONDA_PREFIX:-}" ]] || die "Deactivate your Python/Conda environment and re-run."
     [[ -f "$ROBOT_DIR/pyproject.toml" && -f "$ROBOT_DIR/uv.lock" ]] || die "Robot project or uv.lock is missing."
     select_calibration "$HOME" "$HOME/stretch_user"
+    if [[ -z "$ROBOT_ROS_DOMAIN_ID" ]]; then
+        ROBOT_ROS_DOMAIN_ID=$(/usr/bin/python3 - "$PROJECT_ROOT/controller/config/machines.json" "$FLEET_ID" <<'PY'
+import json
+import sys
+with open(sys.argv[1]) as stream:
+    machines = json.load(stream)['machines']
+print(machines.get(sys.argv[2], {}).get('ros_domain_id', 42))
+PY
+        )
+    fi
     if /usr/bin/python3 -c 'import yaml' 2>/dev/null; then
         validate_parameters
     else
@@ -438,6 +487,7 @@ main() {
 
     log_step "Restoring the robot's calibrated model to the project"
     restore_project_calibration
+    sync_project_meshes
 
     log_step "Building and verifying the project ROS workspace"
     source "$SCRIPT_DIR/ros_tf2_fix.bash"
@@ -463,7 +513,8 @@ main() {
         # Expand these variables when a future shell reads the generated file.
         # shellcheck disable=SC2016
         printf 'export PATH="$HOME/.local/bin:$PATH"\n'
-        printf 'export LRS_LOG_LEVEL=None\nexport ROS_DOMAIN_ID=42\nexport ROS_LOCALHOST_ONLY=0\n'
+        printf 'export LRS_LOG_LEVEL=None\nexport ROS_DOMAIN_ID=%q\nexport ROS_LOCALHOST_ONLY=0\n' "$ROBOT_ROS_DOMAIN_ID"
+        printf 'unset AMENT_PREFIX_PATH CMAKE_PREFIX_PATH COLCON_PREFIX_PATH PYTHONPATH LD_LIBRARY_PATH\n'
         printf 'source /opt/ros/humble/setup.bash\n'
         printf 'source %q\n' "$AMENT_WS/install/local_setup.bash"
         printf 'source %q\n' "$ROBOT_WS/install/local_setup.bash"
@@ -476,11 +527,15 @@ main() {
         printf '\n# PG-LLM robot environment\n%s\n' "$source_line" >> "$HOME/.bashrc"
     fi
 
+    log_step "Installing ROS services from this checkout"
+    /usr/bin/python3 "$PROJECT_ROOT/controller/generate_services.py" --install-local robot \
+        --fleet-id "$FLEET_ID" --ros-domain-id "$ROBOT_ROS_DOMAIN_ID"
+
     log_success "Robot software setup completed. Log: $LOG_FILE"
     log_info "Next, run the guided power-cycle, firmware, tool, homing, and calibration steps:"
     log_info "bash $SCRIPT_DIR/full_robot_setup.bash --post-install"
     log_info "That guide pauses for physical preparation and confirmation before each hardware command."
-    log_info "Then deploy/start robot services from the controller Web UI (scripts/start.sh on the controller)."
+    log_info "Then start the installed robot services from the controller Web UI (scripts/start.sh on the controller)."
     log_info "To rebuild: bash $SCRIPT_DIR/update_robot_ws.sh --build-only"
     if $DDS_NETWORK_SKIPPED; then
         log_warning "DDS is still unconfigured. Connect the dedicated link (robot .51 or .52), then run:"

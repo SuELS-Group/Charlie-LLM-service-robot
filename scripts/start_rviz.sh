@@ -3,9 +3,10 @@
 set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+unset AMENT_PREFIX_PATH CMAKE_PREFIX_PATH COLCON_PREFIX_PATH PYTHONPATH LD_LIBRARY_PATH
 source /opt/ros/humble/setup.bash
-if [[ -f "$PROJECT_DIR/workstation/ament_ws/install/setup.bash" ]]; then
-    source "$PROJECT_DIR/workstation/ament_ws/install/setup.bash"
+if [[ -f "$PROJECT_DIR/workstation/ament_ws/install/local_setup.bash" ]]; then
+    source "$PROJECT_DIR/workstation/ament_ws/install/local_setup.bash"
 fi
 source "$SCRIPT_DIR/ros_tf2_fix.bash"
 pg_source_tf2_fix "$PROJECT_DIR"

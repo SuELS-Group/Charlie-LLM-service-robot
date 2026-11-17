@@ -137,6 +137,39 @@ printf 'SELECTED=%s\n' "$CALIBRATION_DIR"
         self.assertNotEqual(result.returncode, 0)
 
 
+class ModelAssetSetupTests(unittest.TestCase):
+    def sync(self, missing=False):
+        with tempfile.TemporaryDirectory(prefix='fresh-robot-model-') as directory:
+            root = Path(directory)
+            overlay = root / 'robot/src/stretch_ros2/stretch_description'
+            upstream = root / 'official/src/stretch_ros2/stretch_description'
+            (overlay / 'urdf').mkdir(parents=True)
+            (upstream / 'meshes').mkdir(parents=True)
+            (overlay / 'urdf/stretch.urdf').write_text(
+                '<robot><mesh filename="package://stretch_description/meshes/base.stl"/></robot>')
+            if not missing:
+                (upstream / 'meshes/base.stl').write_bytes(b'robot-specific-model')
+            result = subprocess.run(['bash', '-c', '''
+source "$1"
+ROBOT_WS="$2/robot"
+AMENT_WS="$2/official"
+STATE_DIR="$2/state"
+sync_project_meshes
+''', 'bash', str(SCRIPT), str(root)], capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                self.assertEqual((overlay / 'meshes/base.stl').read_bytes(), b'robot-specific-model')
+            return result
+
+    def test_fresh_setup_copies_robot_model_without_old_checkout(self):
+        result = self.sync()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_missing_model_asset_stops_setup(self):
+        result = self.sync(missing=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Missing model mesh', result.stderr)
+
+
 class DNSPreflightTests(unittest.TestCase):
     def check_dns(self, scenario):
         # Stub every network/privileged command: these tests must never alter the

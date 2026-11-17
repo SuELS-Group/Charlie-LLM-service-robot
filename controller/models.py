@@ -33,7 +33,7 @@ class MachineConfig(BaseModel):
     port: int = 22
     ros_domain_id: int = 0
     type: MachineType
-    project_path: str = "~/pg-llm-service-robot"
+    project_path: str = "~/Charlie-LLM-service-robot"
 
 
 class NodeConfig(BaseModel):

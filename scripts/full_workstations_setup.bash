@@ -29,7 +29,7 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 STEP_COUNT=0
-TOTAL_STEPS=10 # 1. Sanity, 2. GPU drivers, 3. System update, 4. ROS2, 5. uv, 6. System deps, 7. ROS2 config, 8. Python env, 9. ROS2 build, 10. Ollama
+TOTAL_STEPS=11 # Includes ROS service installation after the workspace build.
 DDS_NETWORK_SKIPPED=false
 
 log_info() {
@@ -153,7 +153,7 @@ if lspci | grep -qi nvidia; then
       log_warning "A REBOOT IS REQUIRED to load the NVIDIA kernel modules."
       log_warning "After reboot, re-run this script to continue the setup:"
       log_warning ""
-      log_warning "  cd ~/pg-llm-service-robot && ./scripts/full_workstations_setup.bash"
+      log_warning "  bash \"$PROJECT_ROOT/scripts/full_workstations_setup.bash\""
       log_warning "=============================================="
       # Mark that we need to continue after reboot
       touch "$NVIDIA_SETUP_DONE_FLAG"
@@ -325,16 +325,20 @@ else
   log_check "ROS2 setup already in ~/.bashrc"
 fi
 
-# Add onnxruntime library path for sherpa_onnx (TTS/transcriber) if not already present
-if ! grep -q "onnxruntime" ~/.bashrc; then
-  log_substep "Adding onnxruntime library path to ~/.bashrc"
-  echo '' >> ~/.bashrc
-  echo '# onnxruntime library path for sherpa_onnx (TTS/transcriber)' >> ~/.bashrc
-  printf 'export LD_LIBRARY_PATH=%q:"${LD_LIBRARY_PATH:-}"\n' "$WORKSTATION_DIR/.venv/lib/python3.10/site-packages/onnxruntime/capi" >> ~/.bashrc
-  log_check "onnxruntime library path added to ~/.bashrc"
-else
-  log_check "onnxruntime library path already in ~/.bashrc"
-fi
+# Replace this setup's old onnxruntime entry when the checkout was moved.
+log_substep "Updating onnxruntime library path in ~/.bashrc"
+/usr/bin/python3 - "$HOME/.bashrc" "$WORKSTATION_DIR" <<'PY'
+from pathlib import Path
+import shlex
+import sys
+path = Path(sys.argv[1])
+suffix = '/workstation/.venv/lib/python3.10/site-packages/onnxruntime/capi'
+lines = [line for line in path.read_text().splitlines()
+         if not (line.startswith('export LD_LIBRARY_PATH=') and suffix in line)]
+library = sys.argv[2] + '/.venv/lib/python3.10/site-packages/onnxruntime/capi'
+lines.append('export LD_LIBRARY_PATH=' + shlex.quote(library) + ':"${LD_LIBRARY_PATH:-}"')
+path.write_text('\n'.join(lines) + '\n')
+PY
 
 # Clear any stale ROS prefix paths from the environment before building.
 # These linger from a previous session's sourced setup.bash and cause colcon
@@ -366,7 +370,7 @@ uv venv --python 3.10 --allow-existing
 
 # Sync dependencies
 log_substep "Syncing Python dependencies (this may take a while)..."
-uv sync
+uv sync --locked
 
 log_substep "Activating virtual environment..."
 source "$WORKSTATION_DIR/.venv/bin/activate"
@@ -406,6 +410,9 @@ log_substep "Building ROS2 packages (this may take a while)..."
 colcon build --cmake-clean-cache
 
 log_success "ROS2 workspace built successfully"
+
+log_step "Installing ROS services from this checkout"
+/usr/bin/python3 "$PROJECT_ROOT/controller/generate_services.py" --install-local workstation
 
 # =============================================================================
 # Install ollama
