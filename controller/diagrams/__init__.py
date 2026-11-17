@@ -1,0 +1,1 @@
+"""ROS diagram generation module."""

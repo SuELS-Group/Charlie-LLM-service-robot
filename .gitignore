@@ -25,12 +25,15 @@ venv
 /robot/.venv
 /controller/.venv
 /log/
+workstation/.cache/
+.pytest_cache/
 
 .idea/
 .vscode/
-controller/diagrams/
 .codex
-workstation/.cache/
+
+/controller/diagrams/*
+!/controller/diagrams/*.py
 
 # Local enrollment data, profiles, and review records.
 /controller/config/face_db.json*
@@ -40,7 +43,6 @@ workstation/.cache/
 /controller/static/face-images/
 /controller/static/voice-samples/
 
-.pytest_cache/
 
 /controller/config/knowledge/.documents.lock
 /workstation/.k2-results/
